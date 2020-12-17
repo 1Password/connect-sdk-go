@@ -173,6 +173,21 @@ func Test_restClient_GetVaults(t *testing.T) {
 	}
 }
 
+func Test_restClient_GetVaultsByTitle(t *testing.T) {
+	mockHTTPClient.Dofunc = listVaults
+	vaults, err := testClient.GetVaultsByTitle("Test Vault")
+
+	if err != nil {
+		t.Logf("Unable to get vaults: %s", err.Error())
+		t.FailNow()
+	}
+
+	if len(vaults) < 1 {
+		t.Logf("Expected vaults to exist, found %d", len(vaults))
+		t.FailNow()
+	}
+}
+
 func Test_restClient_GetItem(t *testing.T) {
 	mockHTTPClient.Dofunc = getItem
 	item, err := testClient.GetItem(uuid.New().String(), uuid.New().String())
@@ -209,6 +224,21 @@ func Test_restClient_GetItemNotFound(t *testing.T) {
 func Test_restClient_GetItems(t *testing.T) {
 	mockHTTPClient.Dofunc = listItems
 	items, err := testClient.GetItems(uuid.New().String())
+
+	if err != nil {
+		t.Logf("Unable to get item: %s", err.Error())
+		t.FailNow()
+	}
+
+	if len(items) != 1 {
+		t.Logf("Expected 1 item to exist in vault, found %d", len(items))
+		t.FailNow()
+	}
+}
+
+func Test_restClient_GetItemsByTitle(t *testing.T) {
+	mockHTTPClient.Dofunc = listItems
+	items, err := testClient.GetItemsByTitle("test", uuid.New().String())
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
