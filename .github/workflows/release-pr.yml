@@ -1,7 +1,7 @@
 on:
   create:
     branches:
-      - 'release/v*'
+      - 'release/v[0-9]+.[0-9]+.[0-9]+'
 
 name: Open Release PR for review
 
@@ -10,13 +10,17 @@ jobs:
     name: Create Release Pull Request
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+        # All `if` statements are necessary until GitHub supports branch filters for `create` events
+      - if: ${{ contains(github.ref, 'refs/heads/release/v') }}
+        uses: actions/checkout@v2
 
       - name: Parse release version
+        if: ${{ contains(github.ref, 'refs/heads/release/v') }}
         id: get_version
         run: echo "::set-output name=version::$(echo $GITHUB_REF | sed 's|^refs/heads/release/v?*||g')"
 
       - name: Prepare Pull Request
+        if: ${{ contains(github.ref, 'refs/heads/release/v') }}
         id: prep_pr
         run: |
           CHANGELOG_PATH=$(printf "%s/CHANGELOG.md" "${GITHUB_WORKSPACE}")
@@ -42,6 +46,7 @@ jobs:
 
 
       - name: Create Pull Request via API
+        if: ${{ contains(github.ref, 'refs/heads/release/v') }}
         id: post_pr
         uses: octokit/request-action@v2.x
         with:
