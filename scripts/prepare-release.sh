@@ -48,9 +48,8 @@ function updateChangelog() {
 
     # Replace "Latest" in the top-most changelog block with new version
     # Then push a new "latest" block to top of the changelog
-    awk \
-     'NR==1,
-     /---/{ sub(/START\/LATEST/, "START/v'${VERSION_NUM}'"); sub(/# Latest/, "# v'${VERSION_NUM}'") } {print}' "${changelogFile}" > "${tmpfile}"
+    awk 'NR==1, /---/{ sub(/START\/LATEST/, "START/v'${VERSION_NUM}'"); sub(/# Latest/, "# v'${VERSION_NUM}'") } {print}' \
+     "${changelogFile}" > "${tmpfile}"
 
     # Inserts "Latest" changelog HEREDOC at the top of the file
     cat - "${tmpfile}" << EOF > "${REPO_ROOT}/${CHANGELOG_FILENAME}"
@@ -73,20 +72,19 @@ EOF
 
 function _main() {
 
-    git fetch origin "${MAIN_BRANCH:-main}" &>/dev/null
-
     # Stash version changes
-    git stash push
+    git stash push &>/dev/null
 
     if ! git checkout -b "${RELEASE_BRANCH}" origin/"${MAIN_BRANCH:-main}"; then
-        echo "Could not checkout release branch." >&2
+        echo "[ERROR] Could not check out release branch." >&2
+        git stash pop &>/dev/null
         exit 1
     fi
 
-    updateChangelog
-
     # Add the version changes to release branch
     git stash pop &>/dev/null
+
+    updateChangelog
 
     cat << EOF
 
@@ -95,9 +93,9 @@ function _main() {
     Release Branch: ${RELEASE_BRANCH}
 
 Next steps:
-  1. Edit the changelog notes in ${CHANGELOG_FILENAME}
-  2. Commit changes to the release branch
-  3. Push changes to remote => git push origin ${RELEASE_BRANCH}
+    1. Edit the changelog notes in ${CHANGELOG_FILENAME}
+    2. Commit changes to the release branch
+    3. Push changes to remote => git push origin ${RELEASE_BRANCH}
 
 EOF
     exit 0
