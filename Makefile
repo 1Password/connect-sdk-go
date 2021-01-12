@@ -7,7 +7,7 @@ GIT_BRANCH := $(shell git symbolic-ref --short HEAD)
 WORKTREE_CLEAN := $(shell git status --porcelain 1>/dev/null 2>&1; echo $$?)
 SCRIPTS_DIR := $(CURDIR)/scripts
 
-curVersion = "" ## TODO - grep version from file or git tag?
+curVersion := $$(sed -n -E 's/^const SDKVersion = "v?(.+)"$/\1/p' connect/version.go)
 
 test:	## Run test suite
 	go test -v ./...
@@ -26,7 +26,10 @@ release/prepare: .check_git_clean	## Bumps version and creates release branch (c
 	@test $(version) || (echo "[ERROR] version argument not set."; exit 1)
 	@git fetch --quiet origin $(MAIN_BRANCH)
 
+	@sed -i.tmp -E 's/^(const SDKVersion) = "v?(.+)"$$/\1 = "$(version)"/' connect/version.go
 	@NEW_VERSION=$(version) $(SCRIPTS_DIR)/prepare-release.sh
+
+	@rm -f connect/version.go.tmp
 
 
 release/tag: .check_git_clean	## Creates git tag using version from package.json
