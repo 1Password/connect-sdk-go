@@ -16,6 +16,16 @@
 
 ---
 
+[//]: # "START/v1.0.1"
+
+# v1.0.1
+
+## Fixes
+
+- Includes the correct version number in the user agent when making requests
+
+---
+
 [//]: # "START/v1.0.0"
 
 # v1.0.0

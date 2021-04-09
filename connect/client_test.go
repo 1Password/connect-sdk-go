@@ -24,6 +24,7 @@ var testClient *restClient
 
 var requestCount int
 var requestFail bool
+var testUserAgent string
 
 type mockClient struct {
 	Dofunc func(req *http.Request) (*http.Response, error)
@@ -37,6 +38,7 @@ func TestMain(m *testing.M) {
 	validHost = "http://localhost:8080"
 	validToken = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyIxcGFzc3dvcmQuY29tL2F1dWlkIjoiR1RLVjVWUk5UUkVHUEVMWE41QlBSQTJHTjQiLCIxcGFzc3dvcmQuY29tL2Z0cyI6WyJ2YXVsdGFjY2VzcyJdLCIxcGFzc3dvcmQuY29tL3Rva2VuIjoidTFxMUNtWVhtbGR2YWZUa0lHTW8tLTJnazl5a180SkMiLCIxcGFzc3dvcmQuY29tL3Z0cyI6W3siYSI6MTU3MzA2NzIsInUiOiJvdGw2cjZudWdqNXdyNjNybmt3M3Y0cGJuYSJ9XSwiYXVkIjpbImNvbS4xcGFzc3dvcmQuc2VjcmV0c2VydmljZSJdLCJpYXQiOjE2MDMxMjg2NDIsImlzcyI6ImNvbS4xcGFzc3dvcmQuYjUiLCJqdGkiOiI2bjYyZHhyanBxZW00aGJ4d3dxdGJtNmpsZSIsInN1YiI6IkFWNFFORUM3UFJGREZFRTJJREpNM0NSSUNJIn0.-1shD95-qGYrHh3beH5nrfsV91BMp30Y9ipIwE6n4pw8Y9-2fR-gun27ShS9fHLJqW9xJZ-Eir1UEkiha2ucvA"
 	defaultVault = "otl6r6nugj5wr63rnkw3v4pbna"
+	testUserAgent = fmt.Sprintf(defaultUserAgent, SDKVersion)
 
 	os.Setenv("OP_VAULT", defaultVault)
 	os.Setenv("OP_CONNECT_HOST", validHost)
@@ -47,7 +49,7 @@ func TestMain(m *testing.M) {
 	testClient = &restClient{
 		URL:       validHost,
 		Token:     validToken,
-		userAgent: defaultUserAgent,
+		userAgent: testUserAgent,
 		tracer:    opentracing.GlobalTracer(),
 		client:    mockHTTPClient,
 	}
@@ -101,8 +103,8 @@ func TestNewClientFromEnvironment(t *testing.T) {
 		t.FailNow()
 	}
 
-	if restClient.userAgent != defaultUserAgent {
-		t.Logf("Expected user-agent of %q, got %q", defaultUserAgent, restClient.userAgent)
+	if restClient.userAgent != testUserAgent {
+		t.Logf("Expected user-agent of %q, got %q", testUserAgent, restClient.userAgent)
 		t.FailNow()
 	}
 }
@@ -126,8 +128,8 @@ func TestNewClient(t *testing.T) {
 		t.FailNow()
 	}
 
-	if restClient.userAgent != defaultUserAgent {
-		t.Logf("Expected user-agent of %q, got %q", defaultUserAgent, restClient.userAgent)
+	if restClient.userAgent != testUserAgent {
+		t.Logf("Expected user-agent of %q, got %q", testUserAgent, restClient.userAgent)
 		t.FailNow()
 	}
 }
