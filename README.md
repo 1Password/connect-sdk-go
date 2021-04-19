@@ -39,16 +39,18 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 This example struct will retrieve 3 fields from one Item and and a whole Item from another vault
 
 ```go
+package main
+
 import (
 	"github.com/1Password/connect-sdk-go/connect"
 	"github.com/1Password/connect-sdk-go/onepassword"
 )
 
 type Config struct {
-	Database string `opitem:"Demo TF Database" opfield:".database"`
-	Username string `opitem:"Demo TF Database" opfield:".username"`
-  Password string `opitem:"Demo TF Database" opfield:".password"`
-  APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
+	Database string           `opitem:"Demo TF Database" opfield:".database"`
+	Username string           `opitem:"Demo TF Database" opfield:".username"`
+	Password string           `opitem:"Demo TF Database" opfield:".password"`
+	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
 var client connect.Client
@@ -58,6 +60,7 @@ func main() {
 
 	connect.Load(client, &c)
 }
+
 ```
 
 ### Model Objects
