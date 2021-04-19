@@ -54,9 +54,9 @@ type Config struct {
 var client connect.Client
 
 func main() {
-	client, _ := connect.NewClientFromEnvironment("http://localhost:8080")
+	client, _ := connect.NewClientFromEnvironment()
 
-  connect.Load(client, &c)
+	connect.Load(client, &c)
 }
 ```
 
