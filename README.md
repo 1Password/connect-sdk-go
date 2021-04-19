@@ -56,8 +56,11 @@ type Config struct {
 var client connect.Client
 
 func main() {
-	client, _ := connect.NewClientFromEnvironment()
-
+	client, err := connect.NewClientFromEnvironment()
+	if err != nil {
+		panic(err)
+	}
+	
 	connect.Load(client, &c)
 }
 
