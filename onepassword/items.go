@@ -12,6 +12,7 @@ type ItemCategory string
 const (
 	Login                ItemCategory = "LOGIN"
 	Password             ItemCategory = "PASSWORD"
+	ApiCredential        ItemCategory = "ITEM_CATEGORY"
 	Server               ItemCategory = "SERVER"
 	Database             ItemCategory = "DATABASE"
 	CreditCard           ItemCategory = "CREDIT_CARD"
@@ -37,7 +38,7 @@ func (ic *ItemCategory) UnmarshalJSON(b []byte) error {
 	json.Unmarshal(b, &s)
 	category := ItemCategory(s)
 	switch category {
-	case Login, Password, Server, Database, CreditCard, Membership, Passport, SoftwareLicense,
+	case Login, Password, ApiCredential, Server, Database, CreditCard, Membership, Passport, SoftwareLicense,
 		OutdoorLicense, SecureNote, WirelessRouter, BankAccount, DriverLicense, Identity, RewardProgram,
 		Document, EmailAccount, SocialSecurityNumber:
 		*ic = category

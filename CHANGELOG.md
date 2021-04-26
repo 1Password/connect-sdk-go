@@ -4,6 +4,7 @@
 
 ## Features
 
+- Add support for API Credential item category. {14}
 - A user-friendly description of a new feature. {issue-number}
 
 ## Fixes
