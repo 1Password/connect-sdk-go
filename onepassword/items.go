@@ -29,7 +29,7 @@ const (
 	EmailAccount         ItemCategory = "EMAIL_ACCOUNT"
 	SocialSecurityNumber ItemCategory = "SOCIAL_SECURITY_NUMBER"
 	ApiCredential        ItemCategory = "API_CREDENTIAL"
-        Custom               ItemCategory = "CUSTOM"
+	Custom               ItemCategory = "CUSTOM"
 )
 
 // UnmarshalJSON Unmarshall Item Category enum strings to Go string enums
