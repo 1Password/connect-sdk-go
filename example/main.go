@@ -72,16 +72,13 @@ func main() {
 		}
 	}
 
-
 	if char == 'y' {
 		_ = client.DeleteItem(retrievedItem, vault)
 		fmt.Print(steps["step5"])
 	}
 
 	fmt.Print(steps["outro"])
-
 }
-
 
 var steps = map[string]string{
 	"intro":         "\nHello from 1Password! In order to exemplify the end-to-end process of creating, posting, retrieving and, eventually, deleting an item, the following steps are taken: \n",
