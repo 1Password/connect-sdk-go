@@ -23,8 +23,26 @@ $ go get github.com/1Password/connect-sdk-go
 `connect.Client` instances require two pieces of configuration. A token and a hostname. There are three constructor methods provided by this library for creating your client.
 
 - `connect.NewClient` – Accepts a hostname and a token value.
+```go
+client, err := connect.NewClient({connect_host}, {connect_token})
+if err != nil {
+	panic(err)
+}
+```
 - `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment
+```go
+client, err := connect.NewClientFromEnvironment()
+if err != nil {
+	panic(err)
+}
+```
 - `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API
+```go
+client, err := connect.NewClientWithUserAgent({connect_host}, {connect_token}, {user_agent})
+if err != nil {
+	panic(err)
+}
+```
 
 ### Unmarshalling into a Struct
 
@@ -75,12 +93,74 @@ The `onepassword.Item` model represents Items and `onepassword.Vault` represent 
 The `connect.Client` also supports methods for:
 
 - listing Vaults
+```go
+vaults, err := client.GetVaults()
+if err != nil {
+	panic(err)
+}
+```
 - listing items in a Vault
+```go
+items, err := client.GetItems({vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 - searching by Item Title
+```go
+items, err := client.GetItemsByTitle({item_title}, {vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 - Retrieving Item by Vault and Item UUID
+```go
+item, err := client.GetItem({item_uuid}, {vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 - Creating Items in a Vault
+```go
+item := &onepassword.Item{
+	Fields: []*onepassword.ItemField{{
+		Value: "mysecret",
+		Type: "STRING",
+	}},
+	Tags:     []string{"1password-connect"},
+	Category: onepassword.Login,
+	Title:    "Secret String",
+}
+
+postedItem, err := client.CreateItem(item, {vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 - Updating Items
+```go
+item2 := &onepassword.Item{
+	Fields: []*onepassword.ItemField{{
+		Value: "mysecret2",
+		Type: "STRING",
+	}},
+	Tags:     []string{"1password-connect"},
+	Category: onepassword.Login,
+	Title:    "Second Secret String",
+}
+
+secondPostedItem, err := client.CreateItem(item2, {vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 - Deleting Items
+```go
+err := client.DeleteItem({item_uuid}, {vault_uuid})
+if err != nil {
+	panic(err)
+}
+```
 
 ## Development
 
