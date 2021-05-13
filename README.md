@@ -5,7 +5,7 @@ The 1Password Connect Go SDK provides access to the 1Password Connect API hosted
 ## Installation
 
 ```sh
-$ go get github.com/1Password/connect-sdk-go
+go get github.com/1Password/connect-sdk-go
 ```
 
 ## Usage
