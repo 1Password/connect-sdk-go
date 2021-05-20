@@ -1,7 +1,7 @@
 # Go Connect SDK Example
 
 This example has been created in order to illustrate the main available functionality with regard to item manipulation, in the Go Connect SDK.
-Given a (secret) string, this example will create an item, add it to given vault, retrieve it and, eventually, remove it.
+Given a (secret) string, this example will create an item, add it to a given vault, retrieve it and, eventually, remove it.
 
 ## Prerequisites
 
@@ -28,4 +28,4 @@ docker run -it -e OP_CONNECT_TOKEN=<YOUR_CONNECT_TOKEN> -e OP_VAULT=<YOUR_VAULT_
 
 If your Connect instance is deployed locally, the `OP_CONNECT_HOST` environment variable should be set to `http://host.docker.internal:8080`.
 
-You should now be able to see, in real time, the 5 different steps as they happen.
+You will now see, in real time, the 5 different steps (creation of client, creation of item, posting to vault, retrieval from vault, deletion) as they happen.
