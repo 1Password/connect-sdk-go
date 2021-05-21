@@ -36,7 +36,7 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 #### Example Struct
 
-This example struct will retrieve 3 fields from one Item and and a whole Item from another vault
+This example struct will retrieve 3 fields from one Item and a whole Item from another vault
 
 ```go
 package main
