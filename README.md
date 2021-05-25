@@ -5,7 +5,7 @@ The 1Password Connect Go SDK provides access to the 1Password Connect API hosted
 ## Installation
 
 ```sh
-$ go get github.com/1Password/connect-sdk-go
+go get github.com/1Password/connect-sdk-go
 ```
 
 ## Usage
@@ -89,7 +89,7 @@ The `connect.Client` also supports methods for:
 To build all packages run
 
 ```sh
-$ go build ./...
+go build ./...
 ```
 
 ### Running Tests
@@ -97,7 +97,7 @@ $ go build ./...
 To run all tests and see test coverage run
 
 ```sh
-$ go test -v ./... -cover
+go test -v ./... -cover
 ```
 
 ## Security
