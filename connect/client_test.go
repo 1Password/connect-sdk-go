@@ -10,9 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/1Password/connect-sdk-go/onepassword"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/1Password/connect-sdk-go/onepassword"
 )
 
 var validHost string
@@ -173,6 +175,35 @@ func Test_restClient_GetVaults(t *testing.T) {
 		t.Logf("Expected vaults to exist, found %d", len(vaults))
 		t.FailNow()
 	}
+}
+
+func Test_restClient_GetVault(t *testing.T) {
+	expectedVault := &onepassword.Vault{
+		Name:        "Test vault",
+		Description: "Test Vault description",
+		ID:          uuid.New().String(),
+	}
+
+	mockHTTPClient.Dofunc = getVault(expectedVault)
+	vault, err := testClient.GetVault(expectedVault.ID)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedVault, vault, "retrieved vault is not as expected")
+}
+
+func Test_restClient_GetVaultEmptyUUID(t *testing.T) {
+	mockHTTPClient.Dofunc = respondError(http.StatusNotFound)
+	_, err := testClient.GetVault("")
+
+	assert.EqualError(t, err, "no uuid provided")
+}
+
+func Test_restClient_GetVaultError(t *testing.T) {
+	mockHTTPClient.Dofunc = respondError(http.StatusNotFound)
+	_, err := testClient.GetVault(uuid.New().String())
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Not Found")
 }
 
 func Test_restClient_GetVaultsByTitle(t *testing.T) {
@@ -377,6 +408,16 @@ func Test_restClient_DeleteItemError(t *testing.T) {
 	}
 }
 
+func respondError(statusCode int) func(req *http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			Status:     http.StatusText(statusCode),
+			StatusCode: statusCode,
+			Header:     req.Header,
+		}, nil
+	}
+}
+
 func listVaults(req *http.Request) (*http.Response, error) {
 	vaults := []onepassword.Vault{
 		{
@@ -392,6 +433,18 @@ func listVaults(req *http.Request) (*http.Response, error) {
 		Body:       ioutil.NopCloser(bytes.NewReader(json)),
 		Header:     req.Header,
 	}, nil
+}
+
+func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		json, _ := json.Marshal(vault)
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
+	}
 }
 
 func generateItem(vaultUUID string) *onepassword.Item {
