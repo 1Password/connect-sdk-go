@@ -1,18 +1,28 @@
-[//]: # "START/LATEST"
-
+[//]: # (START/LATEST)
 # Latest
 
 ## Features
+  * A user-friendly description of a new feature. {issue-number}
 
-- A user-friendly description of a new feature. {issue-number}
+## Fixes
+ * A user-friendly description of a fix. {issue-number}
+
+## Security
+ * A user-friendly description of a security fix. {issue-number}
+
+---
+
+[//]: # "START/v1.1.0"
+
+# v1.1.0
+
+## Features
+
+- Vaults can be retrieved by their UUID with `GetVault(vaultUUID)`.
 
 ## Fixes
 
-- A user-friendly description of a fix. {issue-number}
-
-## Security
-
-- A user-friendly description of a security fix. {issue-number}
+- The `API_CREDENTIAL` category is now supported. {#14}
 
 ---
 
