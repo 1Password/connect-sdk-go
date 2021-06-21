@@ -37,6 +37,7 @@ type Client interface {
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	GetFileContent(file *onepassword.File, uuid string, itemUUID string, vaultUUID string) error
 	GetFilesByTitle(title string, itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFileByTitle(title string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	UploadFile(file *onepassword.File, itemUUID string, vaultUUID string) (*onepassword.File, error)
@@ -483,15 +484,20 @@ func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*
 		return nil, err
 	}
 
+	if err = rs.GetFileContent(&file, uuid, itemUUID, vaultUUID); err != nil {
+		return nil, err
+	}
+
 	return &file, nil
 }
 
 // GetFileContent Get the content of a specific File
-func (rs *restClient) GetFileContent(file *onepassword.File) error {
+func (rs *restClient) GetFileContent(file *onepassword.File, uuid string, itemUUID string, vaultUUID string) error {
 	span := rs.tracer.StartSpan("GetFileContent")
 	defer span.Finish()
 
-	request, err := rs.buildRequest(http.MethodGet, file.ContentPath, http.NoBody, span)
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files/%s/content", vaultUUID, itemUUID, uuid)
+	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
 	if err != nil {
 		return err
 	}
