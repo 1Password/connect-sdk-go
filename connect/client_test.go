@@ -388,6 +388,42 @@ func Test_restClient_DeleteItemError(t *testing.T) {
 	assert.ErrorIs(t, err, errResult)
 }
 
+func Test_restClient_GetFile(t *testing.T) {
+	mockHTTPClient.Dofunc = getFile
+	file, err := testClient.GetFile(uuid.New().String(), uuid.New().String(), uuid.New().String())
+
+	assert.Nil(t, err)
+	assert.NotNil(t, file)
+}
+
+func Test_restClient_GetFileNotFound(t *testing.T) {
+	errResult := apiError(http.StatusNotFound, "File not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
+	_, err := testClient.GetFile(uuid.New().String(), uuid.New().String(), uuid.New().String())
+
+	assert.ErrorIs(t, err, errResult)
+}
+
+func Test_restClient_GetFileContent(t *testing.T) {
+	f := generateFile()
+
+	mockHTTPClient.Dofunc = getFileContent
+	content, err := testClient.GetFileContent(f)
+
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("test"), content)
+}
+
+func Test_restClient_GetFileContentError(t *testing.T) {
+	f := generateFile()
+
+	errResult := apiError(http.StatusNotFound, "File not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
+	_, err := testClient.GetFileContent(f)
+
+	assert.ErrorIs(t, err, errResult)
+}
+
 func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		body, err := json.Marshal(apiErr)
@@ -562,7 +598,63 @@ func deleteItem(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Status:     http.StatusText(http.StatusNoContent),
 		StatusCode: http.StatusNoContent,
+		Header:     req.Header,
 		Body:       ioutil.NopCloser(&bytes.Buffer{}),
+	}, nil
+}
+
+func generateFile() *onepassword.File {
+	return &onepassword.File{
+		ID:          uuid.New().String(),
+		Name:        "testfile.txt",
+		ContentPath: "/v1/files/xbqdtnehinocwuz23c7l7jiagy/content",
+	}
+}
+
+func getFile(req *http.Request) (*http.Response, error) {
+	if requestFail {
+		json, _ := json.Marshal("Not found")
+		return &http.Response{
+			Status:     http.StatusText(http.StatusNotFound),
+			StatusCode: http.StatusNotFound,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
+	}
+
+	vaultUUID := ""
+	itemUUID := ""
+	excessPath := ""
+	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s/files%s", vaultUUID, itemUUID, excessPath)
+
+	json, _ := json.Marshal(generateFile())
+	return &http.Response{
+		Status:     http.StatusText(http.StatusOK),
+		StatusCode: http.StatusOK,
+		Body:       ioutil.NopCloser(bytes.NewReader(json)),
+		Header:     req.Header,
+	}, nil
+}
+
+func getFileContent(req *http.Request) (*http.Response, error) {
+	if requestFail {
+		json, _ := json.Marshal("Invalid file")
+		return &http.Response{
+			Status:     http.StatusText(http.StatusBadRequest),
+			StatusCode: http.StatusBadRequest,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
+	}
+
+	fileUUID := ""
+	excessPath := ""
+	fmt.Sscanf(req.URL.Path, "/v1/files/%s%s", fileUUID, excessPath)
+
+	return &http.Response{
+		Status:     http.StatusText(http.StatusOK),
+		StatusCode: http.StatusOK,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("test"))),
 		Header:     req.Header,
 	}, nil
 }
