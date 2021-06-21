@@ -35,6 +35,12 @@ type Client interface {
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
+	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
+	GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	GetFilesByTitle(title string, itemUUID string, vaultUUID string) ([]onepassword.File, error)
+	GetFileByTitle(title string, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	UploadFile(file *onepassword.File, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	DeleteFile(file *onepassword.File, itemUUID string, vaultUUID string) error
 }
 
 type httpClient interface {
@@ -409,6 +415,213 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 
 	if response.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("Unable to retrieve item. Receieved %q for %q", response.Status, itemURL)
+	}
+
+	return nil
+}
+
+// GetFiles Get all the files in a specified item
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Unable to retrieve files. Receieved %q for %q", response.Status, itemURL)
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	files := []onepassword.File{}
+	if err := json.Unmarshal(body, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+// GetFile Get a specific File in a specified item
+func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFile")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files/%s", vaultUUID, itemUUID, uuid)
+	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Unable to retrieve files. Receieved %q for %q", response.Status, itemURL)
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	file := onepassword.File{}
+	if err := json.Unmarshal(body, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// GetFileContent Get the content of a specific File
+func (rs *restClient) GetFileContent(file *onepassword.File) error {
+	span := rs.tracer.StartSpan("GetFileContent")
+	defer span.Finish()
+
+	request, err := rs.buildRequest(http.MethodGet, file.ContentPath, http.NoBody, span)
+	if err != nil {
+		return err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("Unable to retrieve file content. Receieved %q for %q", response.Status, file.ContentPath)
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	file.Content = string(body)
+
+	return nil
+}
+
+// GetFilesByTitle Get all the files in a specified item based on a filter
+func (rs *restClient) GetFilesByTitle(title string, itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFilesByTitle")
+	defer span.Finish()
+
+	filter := url.QueryEscape(fmt.Sprintf("name eq \"%s\"", title))
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files?filter=%s", vaultUUID, itemUUID, filter)
+	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Unable to retrieve files. Receieved %q for %q", response.Status, itemURL)
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	files := []onepassword.File{}
+	if err := json.Unmarshal(body, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+// GetFileByTitle Get a specific File in a specified item based on its name
+func (rs *restClient) GetFileByTitle(name string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFileByTitle")
+	defer span.Finish()
+
+	files, err := rs.GetFilesByTitle(name, itemUUID, vaultUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(files) != 1 {
+		return nil, fmt.Errorf("Found %d files in item %q with name %q", len(files), itemUUID, name)
+	}
+
+	return rs.GetFile(files[0].ID, itemUUID, vaultUUID)
+}
+
+// UploadFile Upload a File to a specified item
+func (rs *restClient) UploadFile(file *onepassword.File, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	span := rs.tracer.StartSpan("UploadFile")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	itemBody, err := json.Marshal(file)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := rs.buildRequest(http.MethodPost, itemURL, bytes.NewBuffer(itemBody), span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Unable to upload file. Receieved %q for %q", response.Status, itemURL)
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	newFile := onepassword.File{}
+	if err := json.Unmarshal(body, &newFile); err != nil {
+		return nil, err
+	}
+
+	return &newFile, nil
+}
+
+// DeleteFile Delete a File in a specified item
+func (rs *restClient) DeleteFile(file *onepassword.File, itemUUID string, vaultUUID string) error {
+	span := rs.tracer.StartSpan("DeleteFile")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files/%s", vaultUUID, itemUUID, file.ID)
+	request, err := rs.buildRequest(http.MethodDelete, itemURL, http.NoBody, span)
+	if err != nil {
+		return err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("Unable to retrieve file. Receieved %q for %q", response.Status, itemURL)
 	}
 
 	return nil
