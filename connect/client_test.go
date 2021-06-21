@@ -445,7 +445,7 @@ func Test_restClient_GetFileContent(t *testing.T) {
 	f := generateFile()
 
 	mockHTTPClient.Dofunc = getFileContent
-	err := testClient.GetFileContent(f)
+	err := testClient.GetFileContent(f, uuid.New().String(), uuid.New().String(), uuid.New().String())
 
 	if err != nil {
 		t.Logf("Unable to get file content: %s", err.Error())
@@ -465,7 +465,7 @@ func Test_restClient_GetFileContentError(t *testing.T) {
 	f := generateFile()
 
 	mockHTTPClient.Dofunc = getFileContent
-	err := testClient.GetFileContent(f)
+	err := testClient.GetFileContent(f, uuid.New().String(), uuid.New().String(), uuid.New().String())
 
 	if err == nil {
 		t.Logf("Expected a 404")
