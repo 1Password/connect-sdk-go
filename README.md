@@ -82,6 +82,29 @@ The `connect.Client` also supports methods for:
 - Updating Items
 - Deleting Items
 
+### Errors
+All errors returned by Connect API are unmarshalled into a `onepassword.Error` struct:
+```go
+type Error struct {
+    StatusCode int    `json:"status"`
+    Message    string `json:"message"`
+}
+```
+
+Details of the errors can be accessed by using `errors.As()`:
+```go
+_, err := client.GetVaults()
+if err != nil{
+    var opErr *onepassword.Error
+    if errors.As(err, &opErr){
+        fmt.Printf("message=%s, status code=%d\n",
+            opErr.Message,
+            opErr.StatusCode,
+        )
+    }
+}
+```
+
 ## Development
 
 ### Building

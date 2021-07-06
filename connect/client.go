@@ -115,17 +115,8 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve vaults. Receieved %q for %q", response.Status, vaultURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	vaults := []onepassword.Vault{}
-	if err := json.Unmarshal(body, &vaults); err != nil {
+	var vaults []onepassword.Vault
+	if err := parseResponse(response, http.StatusOK, &vaults); err != nil {
 		return nil, err
 	}
 
@@ -151,18 +142,8 @@ func (rs *restClient) GetVault(uuid string) (*onepassword.Vault, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve vault. Receieved %q for %q", response.Status, vaultURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	vault := onepassword.Vault{}
-	if err := json.Unmarshal(body, &vault); err != nil {
+	var vault onepassword.Vault
+	if err := parseResponse(response, http.StatusOK, &vault); err != nil {
 		return nil, err
 	}
 
@@ -185,17 +166,8 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve vaults. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	vaults := []onepassword.Vault{}
-	if err := json.Unmarshal(body, &vaults); err != nil {
+	var vaults []onepassword.Vault
+	if err := parseResponse(response, http.StatusOK, &vaults); err != nil {
 		return nil, err
 	}
 
@@ -217,18 +189,8 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 	if err != nil {
 		return nil, err
 	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve item. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	item := onepassword.Item{}
-	if err := json.Unmarshal(body, &item); err != nil {
+	var item onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &item); err != nil {
 		return nil, err
 	}
 
@@ -266,17 +228,8 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve item. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	items := []onepassword.Item{}
-	if err := json.Unmarshal(body, &items); err != nil {
+	var items []onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &items); err != nil {
 		return nil, err
 	}
 
@@ -298,17 +251,8 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to retrieve items. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	items := []onepassword.Item{}
-	if err := json.Unmarshal(body, &items); err != nil {
+	var items []onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &items); err != nil {
 		return nil, err
 	}
 
@@ -336,17 +280,8 @@ func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*one
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to create item. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	newItem := onepassword.Item{}
-	if err := json.Unmarshal(body, &newItem); err != nil {
+	var newItem onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &newItem); err != nil {
 		return nil, err
 	}
 
@@ -374,17 +309,8 @@ func (rs *restClient) UpdateItem(item *onepassword.Item, vaultUUID string) (*one
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to update item. Receieved %q for %q", response.Status, itemURL)
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	newItem := onepassword.Item{}
-	if err := json.Unmarshal(body, &newItem); err != nil {
+	var newItem onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &newItem); err != nil {
 		return nil, err
 	}
 
@@ -407,8 +333,8 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 		return err
 	}
 
-	if response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("Unable to retrieve item. Receieved %q for %q", response.Status, itemURL)
+	if err := parseResponse(response, http.StatusNoContent, nil); err != nil {
+		return err
 	}
 
 	return nil
@@ -433,4 +359,25 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 	rs.tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(request.Header))
 
 	return request, nil
+}
+
+func parseResponse(resp *http.Response, expectedStatusCode int, result interface{}) error {
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != expectedStatusCode {
+		var errResp *onepassword.Error
+		if err := json.Unmarshal(body, &errResp); err != nil {
+			return fmt.Errorf("decoding error response: %s", err)
+		}
+		return errResp
+	}
+	if result != nil {
+		if err := json.Unmarshal(body, result); err != nil {
+			return fmt.Errorf("decoding response: %s", err)
+		}
+	}
+	return nil
 }
