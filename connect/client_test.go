@@ -192,18 +192,19 @@ func Test_restClient_GetVault(t *testing.T) {
 }
 
 func Test_restClient_GetVaultEmptyUUID(t *testing.T) {
-	mockHTTPClient.Dofunc = respondError(http.StatusNotFound)
+	errResult := apiError(http.StatusNotFound, "Vault not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
 	_, err := testClient.GetVault("")
 
 	assert.EqualError(t, err, "no uuid provided")
 }
 
 func Test_restClient_GetVaultError(t *testing.T) {
-	mockHTTPClient.Dofunc = respondError(http.StatusNotFound)
+	errResult := apiError(http.StatusNotFound, "Vault not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
 	_, err := testClient.GetVault(uuid.New().String())
 
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "Not Found")
+	assert.ErrorIs(t, err, errResult)
 }
 
 func Test_restClient_GetVaultsByTitle(t *testing.T) {
@@ -237,17 +238,11 @@ func Test_restClient_GetItem(t *testing.T) {
 }
 
 func Test_restClient_GetItemNotFound(t *testing.T) {
-	requestFail = true
-	defer reset()
-
-	mockHTTPClient.Dofunc = getItem
+	errResult := apiError(http.StatusNotFound, "item not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
 	item, err := testClient.GetItem(uuid.New().String(), uuid.New().String())
 
-	if err == nil {
-		t.Log("Expected a 404")
-		t.FailNow()
-	}
-
+	assert.ErrorIs(t, err, errResult)
 	if item != nil {
 		t.Log("Expected no items returns")
 		t.FailNow()
@@ -335,17 +330,11 @@ func Test_restClient_CreateItem(t *testing.T) {
 }
 
 func Test_restClient_CreateItemError(t *testing.T) {
-	requestFail = true
-	defer reset()
-
-	mockHTTPClient.Dofunc = createItem
+	errResult := apiError(http.StatusBadRequest, "Vault UUID required")
+	mockHTTPClient.Dofunc = respondError(errResult)
 	item, err := testClient.CreateItem(generateItem(defaultVault), defaultVault)
 
-	if err == nil {
-		t.Log("Should have failed to create item")
-		t.FailNow()
-	}
-
+	assert.ErrorIs(t, err, errResult)
 	if item != nil {
 		t.Log("Expected item to not be created")
 		t.FailNow()
@@ -368,17 +357,12 @@ func Test_restClient_UpdateItem(t *testing.T) {
 }
 
 func Test_restClient_UpdateItemError(t *testing.T) {
-	requestFail = true
-	defer reset()
+	errResult := apiError(http.StatusBadRequest, "Missing required field")
+	mockHTTPClient.Dofunc = respondError(errResult)
 
-	mockHTTPClient.Dofunc = updateItem
 	item, err := testClient.UpdateItem(generateItem(defaultVault), defaultVault)
 
-	if err == nil {
-		t.Log("Should have failed to update item")
-		t.FailNow()
-	}
-
+	assert.ErrorIs(t, err, errResult)
 	if item != nil {
 		t.Log("Expected item to not be update")
 		t.FailNow()
@@ -396,24 +380,25 @@ func Test_restClient_DeleteItem(t *testing.T) {
 }
 
 func Test_restClient_DeleteItemError(t *testing.T) {
-	requestFail = true
-	defer reset()
+	errResult := apiError(http.StatusNotFound, "Vault not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
 
-	mockHTTPClient.Dofunc = deleteItem
 	err := testClient.DeleteItem(generateItem(defaultVault), defaultVault)
 
-	if err == nil {
-		t.Logf("Expected delete to fail")
-		t.FailNow()
-	}
+	assert.ErrorIs(t, err, errResult)
 }
 
-func respondError(statusCode int) func(req *http.Request) (*http.Response, error) {
+func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
+		body, err := json.Marshal(apiErr)
+		if err != nil {
+			panic(err)
+		}
 		return &http.Response{
-			Status:     http.StatusText(statusCode),
-			StatusCode: statusCode,
+			Status:     http.StatusText(apiErr.StatusCode),
+			StatusCode: apiErr.StatusCode,
 			Header:     req.Header,
+			Body:       ioutil.NopCloser(bytes.NewReader(body)),
 		}, nil
 	}
 }
@@ -502,16 +487,6 @@ func getItemByID(req *http.Request) (*http.Response, error) {
 }
 
 func getItem(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Not found")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusNotFound),
-			StatusCode: http.StatusNotFound,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	vaultUUID := ""
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
@@ -526,16 +501,6 @@ func getItem(req *http.Request) (*http.Response, error) {
 }
 
 func createItem(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Vault UUID required")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusBadRequest),
-			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	rawBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return nil, err
@@ -568,16 +533,6 @@ func createItem(req *http.Request) (*http.Response, error) {
 }
 
 func updateItem(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Missing required field")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusBadRequest),
-			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	rawBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return nil, err
@@ -600,16 +555,6 @@ func updateItem(req *http.Request) (*http.Response, error) {
 }
 
 func deleteItem(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Vault not found")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusNotFound),
-			StatusCode: http.StatusNotFound,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	vaultUUID := ""
 	itemUUID := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
@@ -617,8 +562,16 @@ func deleteItem(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Status:     http.StatusText(http.StatusNoContent),
 		StatusCode: http.StatusNoContent,
+		Body:       ioutil.NopCloser(&bytes.Buffer{}),
 		Header:     req.Header,
 	}, nil
+}
+
+func apiError(statusCode int, message string) *onepassword.Error {
+	return &onepassword.Error{
+		StatusCode: statusCode,
+		Message:    message,
+	}
 }
 
 func reset() {
