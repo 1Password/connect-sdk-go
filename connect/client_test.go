@@ -621,16 +621,6 @@ func generateFile() *onepassword.File {
 }
 
 func getFile(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Not found")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusNotFound),
-			StatusCode: http.StatusNotFound,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	vaultUUID := ""
 	itemUUID := ""
 	excessPath := ""
@@ -646,16 +636,6 @@ func getFile(req *http.Request) (*http.Response, error) {
 }
 
 func getFileContent(req *http.Request) (*http.Response, error) {
-	if requestFail {
-		json, _ := json.Marshal("Invalid file")
-		return &http.Response{
-			Status:     http.StatusText(http.StatusBadRequest),
-			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-
 	fileUUID := ""
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/files/%s%s", fileUUID, excessPath)
