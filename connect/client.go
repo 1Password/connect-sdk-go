@@ -35,6 +35,8 @@ type Client interface {
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
+	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	GetFileContent(file *onepassword.File) ([]byte, error)
 }
 
 type httpClient interface {
@@ -340,6 +342,66 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 	return nil
 }
 
+// GetFile Get a specific File in a specified item.
+// This does not include the file contents. Call GetFileContent() to load the file's content.
+func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFile")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files/%s", vaultUUID, itemUUID, uuid)
+	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+
+	var file onepassword.File
+	if err := parseResponse(response, http.StatusOK, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// GetFileContent retrieves the file's content.
+// If the file's content have previously been fetched, those contents are returned without making another request.
+func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
+	if content, err := file.Content(); err == nil {
+		return content, nil
+	}
+
+	span := rs.tracer.StartSpan("GetFileContent")
+	defer span.Finish()
+
+	request, err := rs.buildRequest(http.MethodGet, file.ContentPath, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+
+	content, err := readResponseBody(response, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+
+	file.SetContent(content)
+	return content, nil
+}
+
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
 	url := fmt.Sprintf("%s%s", rs.URL, path)
 
@@ -362,17 +424,9 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 }
 
 func parseResponse(resp *http.Response, expectedStatusCode int, result interface{}) error {
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := readResponseBody(resp, expectedStatusCode)
 	if err != nil {
 		return err
-	}
-	if resp.StatusCode != expectedStatusCode {
-		var errResp *onepassword.Error
-		if err := json.Unmarshal(body, &errResp); err != nil {
-			return fmt.Errorf("decoding error response: %s", err)
-		}
-		return errResp
 	}
 	if result != nil {
 		if err := json.Unmarshal(body, result); err != nil {
@@ -380,4 +434,20 @@ func parseResponse(resp *http.Response, expectedStatusCode int, result interface
 		}
 	}
 	return nil
+}
+
+func readResponseBody(resp *http.Response, expectedStatusCode int) ([]byte, error) {
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != expectedStatusCode {
+		var errResp *onepassword.Error
+		if err := json.Unmarshal(body, &errResp); err != nil {
+			return nil, fmt.Errorf("decoding error response: %s", err)
+		}
+		return nil, errResp
+	}
+	return body, nil
 }

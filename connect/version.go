@@ -12,6 +12,8 @@ import (
 // Do not rename this variable without changing the regex in the Makefile
 const SDKVersion = "1.1.0"
 
+const VersionHeaderKey = "1Password-Connect-Version"
+
 // expectMinimumConnectVersion returns an error if the provided minimum version for Connect is lower than the version
 // reported in the response from Connect.
 func expectMinimumConnectVersion(resp *http.Response, minimumVersion version) error {
@@ -27,7 +29,7 @@ func expectMinimumConnectVersion(resp *http.Response, minimumVersion version) er
 }
 
 func getServerVersion(resp *http.Response) (serverVersion, error) {
-	versionHeader := resp.Header.Get("1Password-Connect-Version")
+	versionHeader := resp.Header.Get(VersionHeaderKey)
 	if versionHeader == "" {
 		// The last version without the version header was v1.2.0
 		return serverVersion{
