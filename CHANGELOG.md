@@ -12,6 +12,15 @@
 
 ---
 
+[//]: # (START/v1.2.0)
+# v1.2.0
+
+## Features
+ * Files stored as attachments or as fields can now be retrieved (requires Connect `v1.3.0` or later).
+ * Details of Connect API errors can now be inspected by unwrapping a returned error into a `onepassword.Error` struct. {#17}
+
+---
+
 [//]: # "START/v1.1.0"
 
 # v1.1.0
