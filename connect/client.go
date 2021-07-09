@@ -358,6 +358,9 @@ func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*
 	if err != nil {
 		return nil, err
 	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
 
 	var file onepassword.File
 	if err := parseResponse(response, http.StatusOK, &file); err != nil {
@@ -386,10 +389,15 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+
 	content, err := readResponseBody(response, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
+
 	file.SetContent(content)
 	return content, nil
 }
