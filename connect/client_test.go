@@ -28,12 +28,21 @@ var requestCount int
 var requestFail bool
 var testUserAgent string
 
+var testServerDefaultVersion = version{1, 3, 0}
+
 type mockClient struct {
 	Dofunc func(req *http.Request) (*http.Response, error)
 }
 
 func (mc *mockClient) Do(req *http.Request) (*http.Response, error) {
-	return mc.Dofunc(req)
+	resp, err := mc.Dofunc(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Header.Get(VersionHeaderKey) == "" {
+		resp.Header.Set(VersionHeaderKey, testServerDefaultVersion.String())
+	}
+	return resp, nil
 }
 
 func TestMain(m *testing.M) {
