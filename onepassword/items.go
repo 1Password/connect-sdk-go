@@ -2,9 +2,35 @@ package onepassword
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 )
+
+type ItemState string
+
+const (
+	Active   ItemState = ""
+	Deleted  ItemState = "DELETED"
+	Archived ItemState = "ARCHIVED"
+	Unknown  ItemState = "UNKNOWN"
+)
+
+// UnmarshalJSON Unmarshall Item State enum strings to Go string enums
+func (is *ItemState) UnmarshalJSON(b []byte) error {
+	var s string
+	json.Unmarshal(b, &s)
+	state := ItemState(s)
+	switch state {
+	case Deleted, Archived:
+		*is = state
+		return nil
+	default:
+		*is = Unknown
+	}
+
+	return fmt.Errorf("%q isn't a recognized item state", s)
+}
 
 // ItemCategory Represents the template of the Item
 type ItemCategory string
@@ -58,7 +84,7 @@ type Item struct {
 	Favorite bool      `json:"favorite,omitempty"`
 	Tags     []string  `json:"tags,omitempty"`
 	Version  int       `json:"version,omitempty"`
-	Trashed  bool      `json:"trashed,omitempty"`
+	State    ItemState `json:"state,omitempty"`
 
 	Vault    ItemVault    `json:"vault"`
 	Category ItemCategory `json:"category,omitempty"` // TODO: switch this to `category`
@@ -70,6 +96,9 @@ type Item struct {
 	LastEditedBy string    `json:"lastEditedBy,omitempty"`
 	CreatedAt    time.Time `json:"createdAt,omitempty"`
 	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
+
+	// Deprecated
+	Trashed  bool      `json:"trashed,omitempty"`
 }
 
 // ItemVault represents the Vault the Item is found in
