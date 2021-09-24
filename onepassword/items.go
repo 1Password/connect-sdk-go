@@ -80,7 +80,7 @@ type Item struct {
 	CreatedAt    time.Time `json:"createdAt,omitempty"`
 	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
 
-	// Deprecated
+	// Deprecated: use State field instead.
 	Trashed  bool      `json:"trashed,omitempty"`
 }
 
