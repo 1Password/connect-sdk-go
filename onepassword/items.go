@@ -12,7 +12,6 @@ const (
 	Active   ItemState = ""
 	Deleted  ItemState = "DELETED"
 	Archived ItemState = "ARCHIVED"
-	Unknown  ItemState = "UNKNOWN"
 )
 
 // ItemCategory Represents the template of the Item
