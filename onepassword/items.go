@@ -58,7 +58,6 @@ type Item struct {
 	Favorite bool      `json:"favorite,omitempty"`
 	Tags     []string  `json:"tags,omitempty"`
 	Version  int       `json:"version,omitempty"`
-	Trashed  bool      `json:"trashed,omitempty"`
 
 	Vault    ItemVault    `json:"vault"`
 	Category ItemCategory `json:"category,omitempty"` // TODO: switch this to `category`
@@ -70,6 +69,9 @@ type Item struct {
 	LastEditedBy string    `json:"lastEditedBy,omitempty"`
 	CreatedAt    time.Time `json:"createdAt,omitempty"`
 	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
+
+	// Deprecated: Connect does not return trashed items.
+	Trashed  bool      `json:"trashed,omitempty"`
 }
 
 // ItemVault represents the Vault the Item is found in
