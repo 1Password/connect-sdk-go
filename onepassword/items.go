@@ -6,14 +6,6 @@ import (
 	"time"
 )
 
-type ItemState string
-
-const (
-	Active   ItemState = ""
-	Deleted  ItemState = "DELETED"
-	Archived ItemState = "ARCHIVED"
-)
-
 // ItemCategory Represents the template of the Item
 type ItemCategory string
 
@@ -66,7 +58,6 @@ type Item struct {
 	Favorite bool      `json:"favorite,omitempty"`
 	Tags     []string  `json:"tags,omitempty"`
 	Version  int       `json:"version,omitempty"`
-	State    ItemState `json:"state,omitempty"`
 
 	Vault    ItemVault    `json:"vault"`
 	Category ItemCategory `json:"category,omitempty"` // TODO: switch this to `category`
@@ -79,7 +70,7 @@ type Item struct {
 	CreatedAt    time.Time `json:"createdAt,omitempty"`
 	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
 
-	// Deprecated: use State field instead.
+	// Deprecated: Connect does not return trashed items.
 	Trashed  bool      `json:"trashed,omitempty"`
 }
 
