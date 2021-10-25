@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-    c := Config{}
+    	c := Config{}
 	err = client.LoadToConfig(&c)
 }
 
@@ -79,7 +79,7 @@ type Config struct {
 
 func main () {
 	client, err := connect.NewClientFromEnvironment()
-    if err != nil {
+    	if err != nil {
 		panic(err)
 	}
 	c := Config{}
