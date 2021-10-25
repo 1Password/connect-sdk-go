@@ -36,7 +36,7 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 #### Example Struct
 
-This example struct will retrieve 3 fields from one Item and a whole Item from another vault
+This example struct will retrieve 2 fields from one Item and a whole Item from another vault
 
 ```go
 package main
@@ -47,7 +47,6 @@ import (
 )
 
 type Config struct {
-	Database string           `opitem:"Demo TF Database" opfield:".database"`
 	Username string           `opitem:"Demo TF Database" opfield:".username"`
 	Password string           `opitem:"Demo TF Database" opfield:".password"`
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
@@ -60,12 +59,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
-	connect.Load(client, &c)
+    c := Config{}
+	err = client.LoadToConfig(&c)
 }
 
 ```
+Additionally, fields of the same item can be added to a struct at once, without needing to specify the `opitem` or `opvault` tags:
+```go
+package main
 
+import "github.com/1Password/connect-sdk-go/connect"
+
+
+
+type Config struct {
+	Username string     `opfield:".username"`
+	Password string     `opfield:".password"`
+}
+
+func main () {
+	client, err := connect.NewClientFromEnvironment()
+    if err != nil {
+		panic(err)
+	}
+	c := Config{}
+	err := client.LoadFromItemToConfig(&c, "item-title", "vault-uuid")
+
+
+}
+
+```
 ### Model Objects
 
 The `onepassword.Item` model represents Items and `onepassword.Vault` represent Vaults in 1Password
