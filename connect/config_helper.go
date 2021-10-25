@@ -2,7 +2,6 @@ package connect
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -25,62 +24,19 @@ type parsedItem struct {
 	values    []*reflect.Value
 }
 
-// Load Load configuration values based on strcut tag
-func Load(client Client, i interface{}) error {
+func checkStruct(i interface{}) (reflect.Value, error) {
 	configP := reflect.ValueOf(i)
 	if configP.Kind() != reflect.Ptr {
-		return fmt.Errorf("You must pass a pointer to Config struct")
+		return reflect.Value{}, fmt.Errorf("you must pass a pointer to Config struct")
 	}
 
 	config := configP.Elem()
 	if config.Kind() != reflect.Struct {
-		return fmt.Errorf("Config values can only be loaded into a struct")
+		return reflect.Value{}, fmt.Errorf("config values can only be loaded into a struct")
 	}
+	return config, nil
 
-	t := config.Type()
-
-	// Multiple fields may be from a single item so we will collect them
-	items := map[string]parsedItem{}
-
-	// Fetch the Vault from the environment
-	vaultUUID, envVarFound := os.LookupEnv(envVaultVar)
-
-	for i := 0; i < t.NumField(); i++ {
-		value := config.Field(i)
-		field := t.Field(i)
-		tag := field.Tag.Get(itemTag)
-
-		if tag == "" {
-			continue
-		}
-
-		if !value.CanSet() {
-			return fmt.Errorf("Cannot load config into private fields")
-		}
-
-		itemVault, err := vaultUUIDForField(&field, vaultUUID, envVarFound)
-		if err != nil {
-			return err
-		}
-
-		key := fmt.Sprintf("%s/%s", itemVault, tag)
-		parsed := items[key]
-		parsed.vaultUUID = itemVault
-		parsed.itemTitle = tag
-		parsed.fields = append(parsed.fields, &field)
-		parsed.values = append(parsed.values, &value)
-		items[key] = parsed
-	}
-
-	for _, item := range items {
-		if err := setValuesForTag(client, &item); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
-
 func vaultUUIDForField(field *reflect.StructField, vaultUUID string, envVaultFound bool) (string, error) {
 	// Check to see if a specific vault has been specified on the field
 	// If the env vault id has not been found and item doesn't have a vault
