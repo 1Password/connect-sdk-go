@@ -115,21 +115,21 @@ The `onepassword.Item` model represents items and `onepassword.Vault` represents
 
 The `connect.Client` also supports methods for:
 
-* listing Vaults
+* Retrieving vaults
 ```go
 	vaults, err := client.GetVaults()
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-* listing items in a Vault
+* Retrieving items in a vault
 ```go
 	items, err := client.GetItems("<vault-uuid>")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-* searching by Item Title
+* Retrieving items by their title
 ```go
 	items, err := client.GetItemsByTitle("<items-title>", "<vault-uuid>")
 	if err != nil {
@@ -143,14 +143,14 @@ In case the item title is unique to the item, another function is available as w
 		log.Fatal(err)
 	}
 ```
-* Retrieving Item by Vault and Item UUID
+* Retrieving items by vault and item UUID
 ```go
 	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-* Creating Items in a Vault
+* Creating items in a vault
 ```go
 	item := &onepassword.Item{
 		Fields: []*onepassword.ItemField{{
@@ -167,7 +167,7 @@ In case the item title is unique to the item, another function is available as w
 		log.Fatal(err)
 	}
 ```
-* Updating Items
+* Updating items
 ```go
 	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
 	if err != nil {
@@ -176,13 +176,31 @@ In case the item title is unique to the item, another function is available as w
 	item.Title = "new title"
 	client.UpdateItem(item, "<vault-uuid>")
 ```
-* Deleting Items
+* Deleting items
 ```go
 	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
 	if err != nil {
 		log.Fatal(err)
 	}
 	err = client.DeleteItem(item, "vault-uuid")
+```
+* Retrieving files
+```go
+	file, err := client.GetFile("<file-uuid>", "item-uuid", "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* Retrieving the contents of files
+```go
+	file, err := client.GetFile("<file-uuid>", "item-uuid", "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+	content, err := client.GetFileContent(file)
+	if err != nil {
+		log.Fatal(err)
+	}
 ```
 
 ### Errors
