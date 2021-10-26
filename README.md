@@ -131,6 +131,13 @@ The `connect.Client` also supports methods for:
 ```
 * searching by Item Title
 ```go
+	items, err := client.GetItemsByTitle("<items-title>", "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+In case the item title is unique to the item, another function is available as well, returning only one item, instead of a slice:
+```go
 	item, err := client.GetItemByTitle("<item-title>", "<vault-uuid>")
 	if err != nil {
 		log.Fatal(err)
