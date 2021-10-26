@@ -14,9 +14,11 @@ go get github.com/1Password/connect-sdk-go
 
 ## Usage
 
+Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go). 
+
 ### Environment Variables
 
-In order to use the Connect Go SDK, the following environment variables need to be set priorly:
+The Connect Go SDK makes use of the following environment variables:
 * `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
 * `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
 * `OP_VAULT`: a vault UUID. Used as default vault in the `LoadConfig` function, for all fields where the `.opvault` tag is not set.
@@ -53,8 +55,18 @@ func main () {
 	}
 }
 ```
-* `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API
+* `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API:
+```go
+package main
 
+import "github.com/1Password/connect-sdk-go/connect"
+
+func main () {
+	client := connect.NewClientWithUserAgent("http://localhost:8080", "eyJhbGciOiJFUzI1NiI", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) FxiOS/8.1.1b4948 Mobile/14F89 Safari/603.2.4")
+}
+```
+
+[comment]: <> (The following subsection will be modified upon the merging of PR #31)
 ### Unmarshalling into a Struct
 
 Users can define tags on a struct and have the `connect.Client` unmarshall item data directly in them. Supported field tags are:
@@ -103,13 +115,68 @@ The `onepassword.Item` model represents Items and `onepassword.Vault` represent 
 
 The `connect.Client` also supports methods for:
 
-- listing Vaults
-- listing items in a Vault
-- searching by Item Title
-- Retrieving Item by Vault and Item UUID
-- Creating Items in a Vault
-- Updating Items
-- Deleting Items
+* listing Vaults
+```go
+	vaults, err := client.GetVaults()
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* listing items in a Vault
+```go
+	items, err := client.GetItems("<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* searching by Item Title
+```go
+	item, err := client.GetItemByTitle("<item-title>", "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* Retrieving Item by Vault and Item UUID
+```go
+	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* Creating Items in a Vault
+```go
+	item := &onepassword.Item{
+		Fields: []*onepassword.ItemField{{
+			Value: "mysecret",
+			Type: "STRING",
+		}},
+		Tags:     []string{"1password-connect"},
+		Category: onepassword.Login,
+		Title:    "Secret String",
+	}
+
+	postedItem, err := client.CreateItem(item, "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+* Updating Items
+```go
+	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+	item.Title = "new title"
+	client.UpdateItem(item, "<vault-uuid>")
+```
+* Deleting Items
+```go
+	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.DeleteItem(item, "vault-uuid")
+```
 
 ### Errors
 All errors returned by Connect API are unmarshalled into a `onepassword.Error` struct:
