@@ -52,15 +52,13 @@ type Config struct {
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
-var client connect.Client
-
 func main() {
 	client, err := connect.NewClientFromEnvironment()
 	if err != nil {
 		panic(err)
 	}
     	c := Config{}
-	err = client.LoadToConfig(&c)
+	err = client.LoadConfig(&c)
 }
 
 ```
@@ -69,7 +67,6 @@ Additionally, fields of the same item can be added to a struct at once, without 
 package main
 
 import "github.com/1Password/connect-sdk-go/connect"
-
 
 
 type Config struct {
@@ -83,9 +80,7 @@ func main () {
 		panic(err)
 	}
 	c := Config{}
-	err := client.LoadFromItemToConfig(&c, "item-title", "vault-uuid")
-
-
+	err = client.LoadConfigFromItem(&c, "item-title", "vault-uuid")
 }
 
 ```
