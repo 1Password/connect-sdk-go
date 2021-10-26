@@ -4,10 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/1Password/connect-sdk-go)](https://goreportcard.com/report/github.com/1Password/connect-sdk-go)
 [![Version](https://img.shields.io/github/release/1Password/connect-sdk-go.svg)](https://github.com/1Password/connect-sdk-go/releases/)
 
-The 1Password Connect Go SDK provides access to the 1Password Connect API hosted on your infrastructure. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
+The 1Password Connect Go SDK provides access to the 1Password Connect API, to facilitate communication with the Connect server hosted on your infrastructure. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
 
 ## Installation
-
+To download and install the 1Password Connect Go SDK, as well as its dependencies:
 ```sh
 go get github.com/1Password/connect-sdk-go
 ```
@@ -16,19 +16,44 @@ go get github.com/1Password/connect-sdk-go
 
 ### Environment Variables
 
-| Variable           | Description | Feature |
-|:-------------------|:------------|------:|
-| `OP_CONNECT_TOKEN` | The API token to be used to authenticate the client to a 1Password Connect API. | [API Client](#/Creating-an-api-client) |
-| `OP_CONNECT_HOST`  | The hostname of the 1Password Connect API | [API Client](#/Creating-an-api-client) |
-| `OP_VAULT`         | If the `opvault` tag is not set the client will default to this vault UUID | [Unmarshalling](#/Unmarshalling-into-a-struct) |
+In order to use the Connect Go SDK, the following environment variables need to be set priorly:
+* `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
+* `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
+* `OP_VAULT`: a vault UUID. Used as default vault in the `LoadConfig` function, for all fields where the `.opvault` tag is not set.
 
 ### Creating an API Client
 
 `connect.Client` instances require two pieces of configuration. A token and a hostname. There are three constructor methods provided by this library for creating your client.
 
-- `connect.NewClient` – Accepts a hostname and a token value.
-- `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment
-- `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API
+* `connect.NewClient` – Accepts a hostname and a token value.
+```go
+package main
+
+import "github.com/1Password/connect-sdk-go/connect"
+
+func main () {
+	client := connect.NewClient("http://localhost:8080", "eyA73ycbAY72")
+}
+```
+* `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment, and expects these to be passed as environment variables (`OP_CONNECT_HOST` and `OP_CONNECT_TOKEN`, respectively):
+```sh
+export OP_CONNECT_TOKEN=eyA73ycbAY72
+export OP_CONNECT_HOST=http://localhost:8080
+```
+Now, the function can be invoked as such:
+```go
+package main
+
+import "github.com/1Password/connect-sdk-go/connect"
+
+func main () {
+	client, err:= connect.NewClientFromEnvironment()
+	if err != nil {
+		panic(err)
+	}
+}
+```
+* `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API
 
 ### Unmarshalling into a Struct
 
