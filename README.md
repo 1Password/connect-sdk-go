@@ -19,8 +19,8 @@ Below, you can find a selection of the most used functionality of the Connect Go
 ### Environment Variables
 
 The Connect Go SDK makes use of the following environment variables:
-* `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
-* `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to successfully authenticate with the `connect.NewClientFromEnvironment` function.
+* `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
+* `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
 * `OP_VAULT`: a vault UUID. Used as default vault in the `LoadConfig` function, for all fields where the `.opvault` tag is not set.
 
 ### Creating an API Client
@@ -109,7 +109,7 @@ func main() {
 
 ### Model Objects
 
-The `onepassword.Item` model represents Items and `onepassword.Vault` represent Vaults in 1Password
+The `onepassword.Item` model represents items and `onepassword.Vault` represents vaults, in 1Password.
 
 ### Item CRUD
 
