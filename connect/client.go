@@ -35,6 +35,7 @@ type Client interface {
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
+	DeleteItemByID(itemUUID string, vaultUUID string) error
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
 }
@@ -325,6 +326,29 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 	defer span.Finish()
 
 	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s", item.Vault.ID, item.ID)
+	request, err := rs.buildRequest(http.MethodDelete, itemURL, http.NoBody, span)
+	if err != nil {
+		return err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if err := parseResponse(response, http.StatusNoContent, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteItem Delete a new item in a specified vault, specifying the item's uuid
+func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+	span := rs.tracer.StartSpan("DeleteItemByID")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
 	request, err := rs.buildRequest(http.MethodDelete, itemURL, http.NoBody, span)
 	if err != nil {
 		return err
