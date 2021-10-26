@@ -1,5 +1,9 @@
 # 1Password Connect Go SDK
 
+[![GoDoc](https://godoc.org/github.com/1Password/connect-sdk-go?status.svg)][godoc]
+[![Go Report Card](https://goreportcard.com/badge/github.com/1Password/connect-sdk-go)][goreportcard]
+[![Version](https://img.shields.io/github/release/1Password/connect-sdk-go.svg)][latest-version]
+
 The 1Password Connect Go SDK provides access to the 1Password Connect API hosted on your infrastructure. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
 
 ## Installation
