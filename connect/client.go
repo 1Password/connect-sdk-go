@@ -37,8 +37,8 @@ type Client interface {
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
-	LoadConfigFromItem(config interface{}, itemTitle string, vaultUUID string) error
-	LoadConfig(config interface{}) error
+	LoadStructFromItem(config interface{}, itemTitle string, vaultUUID string) error
+	LoadStruct(config interface{}) error
 }
 
 type httpClient interface {
@@ -426,7 +426,7 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 }
 
 // LoadConfigFromItem Load configuration values based on struct tag from one 1P item
-func (rs *restClient) LoadConfigFromItem(i interface{}, itemTitle string, vaultUUID string) error {
+func (rs *restClient) LoadStructFromItem(i interface{}, itemTitle string, vaultUUID string) error {
 	config, err := checkStruct(i)
 	if err != nil {
 		return err
@@ -456,7 +456,7 @@ func (rs *restClient) LoadConfigFromItem(i interface{}, itemTitle string, vaultU
 }
 
 // LoadConfig Load configuration values based on struct tag
-func (rs *restClient) LoadConfig(i interface{}) error {
+func (rs *restClient) LoadStruct(i interface{}) error {
 	config, err := checkStruct(i)
 	if err != nil {
 		return err

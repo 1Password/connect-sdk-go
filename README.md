@@ -36,7 +36,7 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 #### Example Struct
 
-This example struct will retrieve 2 fields from one Item and a whole Item from another vault
+This example struct will retrieve 2 fields from one item and a whole item from another vault:
 
 ```go
 package main
@@ -58,7 +58,7 @@ func main() {
 		panic(err)
 	}
     	c := Config{}
-	err = client.LoadConfig(&c)
+	err = client.LoadStruct(&c)
 }
 
 ```
@@ -80,9 +80,8 @@ func main () {
 		panic(err)
 	}
 	c := Config{}
-	err = client.LoadConfigFromItem(&c, "item-title", "vault-uuid")
+	err = client.LoadStructFromItem(&c, "item-title", "vault-uuid")
 }
-
 ```
 ### Model Objects
 
