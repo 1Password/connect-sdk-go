@@ -34,6 +34,8 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 - `opitem` – The title of the Item
 - `opfield` – The item field whose value should be retrieved
 
+All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag. In case this is not set, the SDK will use the value of the `OP_VAULT` environment variable as the default UUID.
+
 #### Example Struct
 
 This example struct will retrieve 2 fields from one item and a whole item from another vault:
@@ -80,7 +82,8 @@ func main () {
 		panic(err)
 	}
 	c := Config{}
-	err = client.LoadStructFromItem(&c, "item-title", "vault-uuid")
+	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4") // retrieve using item title
+    err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4") // retrieve using item uuid
 }
 ```
 ### Model Objects

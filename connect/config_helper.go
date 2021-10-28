@@ -19,6 +19,7 @@ const (
 
 type parsedItem struct {
 	vaultUUID string
+	itemUUID  string
 	itemTitle string
 	fields    []*reflect.StructField
 	values    []*reflect.Value
@@ -52,8 +53,14 @@ func vaultUUIDForField(field *reflect.StructField, vaultUUID string, envVaultFou
 	return vaultUUID, nil
 }
 
-func setValuesForTag(client Client, parsedItem *parsedItem) error {
-	item, err := client.GetItemByTitle(parsedItem.itemTitle, parsedItem.vaultUUID)
+func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error {
+	var item *onepassword.Item
+	var err error
+	if byTitle {
+		item, err = client.GetItemByTitle(parsedItem.itemTitle, parsedItem.vaultUUID)
+	} else {
+		item, err = client.GetItem(parsedItem.itemUUID, parsedItem.vaultUUID)
+	}
 	if err != nil {
 		return err
 	}
