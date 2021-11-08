@@ -32,13 +32,16 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 - `opvault` – The UUID of the vault the item should come from
 - `opitem` – The title of the Item
+- `opsection` - The section where the required field is located 
 - `opfield` – The item field whose value should be retrieved
 
-All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag. In case this is not set, the SDK will use the value of the `OP_VAULT` environment variable as the default UUID.
+All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag. 
+In case this is not set, the SDK will use the value of the `OP_VAULT` environment variable as the default UUID.
+If a field is within a section, the `opsection` tag is required as well. Please note that one cannot retrieve a section in itself.
 
 #### Example Struct
 
-This example struct will retrieve 2 fields from one item and a whole item from another vault:
+This example struct will retrieve 3 fields from one item and a whole item from another vault:
 
 ```go
 package main
@@ -49,8 +52,9 @@ import (
 )
 
 type Config struct {
-	Username string           `opitem:"Demo TF Database" opfield:".username"`
-	Password string           `opitem:"Demo TF Database" opfield:".password"`
+	Username string           `opitem:"Demo TF Database" opfield:"username"`
+	Password string           `opitem:"Demo TF Database" opfield:"password"`
+    Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"password"`
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
@@ -72,8 +76,8 @@ import "github.com/1Password/connect-sdk-go/connect"
 
 
 type Config struct {
-	Username string     `opfield:".username"`
-	Password string     `opfield:".password"`
+	Username string     `opfield:"username"`
+	Password string     `opfield:"password"`
 }
 
 func main () {
