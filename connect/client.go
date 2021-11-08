@@ -39,7 +39,7 @@ type Client interface {
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
-	LoadStructFromItem(config interface{}, itemTitle string, vaultUUID string) error
+	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
 }
 
