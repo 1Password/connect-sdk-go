@@ -54,7 +54,7 @@ import (
 type Config struct {
 	Username string           `opitem:"Demo TF Database" opfield:"username"`
 	Password string           `opitem:"Demo TF Database" opfield:"password"`
-    Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"password"`
+        Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"password"`
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
