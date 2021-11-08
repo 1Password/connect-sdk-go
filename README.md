@@ -87,7 +87,7 @@ func main () {
 	}
 	c := Config{}
 	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4") // retrieve using item title
-    err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4") // retrieve using item uuid
+        err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4") // retrieve using item uuid
 }
 ```
 ### Model Objects

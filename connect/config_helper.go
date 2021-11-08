@@ -74,11 +74,11 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 				value.Set(reflect.ValueOf(*item))
 				return nil
 			}
-			return fmt.Errorf("there is no %q specified for %q", fieldTag, field.Name)
+			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
 		}
 
 		if strings.HasSuffix(path,".") {
-			return fmt.Errorf("there is no %q specified for %q", fieldTag, field.Name)
+			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
 		}
 
 		sectionID := sectionIDForName(field.Tag.Get(sectionTag), item.Sections)
@@ -112,7 +112,7 @@ func setValue(value *reflect.Value, toSet string) error {
 		}
 		value.SetInt(int64(v))
 	default:
-		return fmt.Errorf("unsupported type %q. Only string, int64, and onepassword.Item are supported", value.Kind())
+		return fmt.Errorf("Unsupported type %q. Only string, int64, and onepassword.Item are supported", value.Kind())
 	}
 
 	return nil
