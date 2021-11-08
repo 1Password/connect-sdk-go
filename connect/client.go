@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -102,35 +103,6 @@ type restClient struct {
 	userAgent string
 	tracer    opentracing.Tracer
 	client    httpClient
-}
-
-func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
-	config, err := checkStruct(i)
-	if err != nil {
-		return err
-	}
-	t := config.Type()
-	item := parsedItem{}
-
-	for i := 0; i < t.NumField(); i++ {
-		value := config.Field(i)
-		field := t.Field(i)
-
-		if !value.CanSet() {
-			return fmt.Errorf("cannot load config into private fields")
-		}
-
-		item.vaultUUID = vaultUUID
-		item.itemUUID = itemUUID
-		item.fields = append(item.fields, &field)
-		item.values = append(item.values, &value)
-	}
-
-	if err := setValuesForTag(rs, &item, false); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // GetVaults Get a list of all available vaults
@@ -455,15 +427,8 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 	return request, nil
 }
 
-// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
-func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
-	config, err := checkStruct(i)
-	if err != nil {
-		return err
-	}
+func loadToStruct(item *parsedItem, config reflect.Value) error {
 	t := config.Type()
-	item := parsedItem{}
-
 	for i := 0; i < t.NumField(); i++ {
 		value := config.Field(i)
 		field := t.Field(i)
@@ -472,12 +437,44 @@ func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string,
 			return fmt.Errorf("cannot load config into private fields")
 		}
 
-		item.vaultUUID = vaultUUID
-		item.itemTitle = itemTitle
 		item.fields = append(item.fields, &field)
 		item.values = append(item.values, &value)
 	}
+	return nil
+}
 
+func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemUUID = itemUUID
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
+	if err := setValuesForTag(rs, &item, false); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
+func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemTitle = itemTitle
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
 	if err := setValuesForTag(rs, &item, true); err != nil {
 		return err
 	}
