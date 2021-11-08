@@ -10,8 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	jaegerClientConfig "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-client-go/zipkin"
@@ -37,6 +38,9 @@ type Client interface {
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
+	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
+	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
+	LoadStruct(config interface{}) error
 }
 
 type httpClient interface {
@@ -421,6 +425,112 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 	rs.tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(request.Header))
 
 	return request, nil
+}
+
+func loadToStruct(item *parsedItem, config reflect.Value) error {
+	t := config.Type()
+	for i := 0; i < t.NumField(); i++ {
+		value := config.Field(i)
+		field := t.Field(i)
+
+		if !value.CanSet() {
+			return fmt.Errorf("cannot load config into private fields")
+		}
+
+		item.fields = append(item.fields, &field)
+		item.values = append(item.values, &value)
+	}
+	return nil
+}
+
+func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemUUID = itemUUID
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
+	if err := setValuesForTag(rs, &item, false); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
+func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemTitle = itemTitle
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
+	if err := setValuesForTag(rs, &item, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadConfig Load configuration values based on struct tag
+func (rs *restClient) LoadStruct(i interface{}) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+
+	t := config.Type()
+
+	// Multiple fields may be from a single item so we will collect them
+	items := map[string]parsedItem{}
+
+	// Fetch the Vault from the environment
+	vaultUUID, envVarFound := os.LookupEnv(envVaultVar)
+
+	for i := 0; i < t.NumField(); i++ {
+		value := config.Field(i)
+		field := t.Field(i)
+		tag := field.Tag.Get(itemTag)
+
+		if tag == "" {
+			continue
+		}
+
+		if !value.CanSet() {
+			return fmt.Errorf("Cannot load config into private fields")
+		}
+
+		itemVault, err := vaultUUIDForField(&field, vaultUUID, envVarFound)
+		if err != nil {
+			return err
+		}
+
+		key := fmt.Sprintf("%s/%s", itemVault, tag)
+		parsed := items[key]
+		parsed.vaultUUID = itemVault
+		parsed.itemTitle = tag
+		parsed.fields = append(parsed.fields, &field)
+		parsed.values = append(parsed.values, &value)
+		items[key] = parsed
+	}
+
+	for _, item := range items {
+		if err := setValuesForTag(rs, &item, true); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func parseResponse(resp *http.Response, expectedStatusCode int, result interface{}) error {

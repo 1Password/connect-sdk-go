@@ -2,7 +2,6 @@ package connect
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -20,67 +19,25 @@ const (
 
 type parsedItem struct {
 	vaultUUID string
+	itemUUID  string
 	itemTitle string
 	fields    []*reflect.StructField
 	values    []*reflect.Value
 }
 
-// Load Load configuration values based on strcut tag
-func Load(client Client, i interface{}) error {
+func checkStruct(i interface{}) (reflect.Value, error) {
 	configP := reflect.ValueOf(i)
 	if configP.Kind() != reflect.Ptr {
-		return fmt.Errorf("You must pass a pointer to Config struct")
+		return reflect.Value{}, fmt.Errorf("you must pass a pointer to Config struct")
 	}
 
 	config := configP.Elem()
 	if config.Kind() != reflect.Struct {
-		return fmt.Errorf("Config values can only be loaded into a struct")
+		return reflect.Value{}, fmt.Errorf("config values can only be loaded into a struct")
 	}
+	return config, nil
 
-	t := config.Type()
-
-	// Multiple fields may be from a single item so we will collect them
-	items := map[string]parsedItem{}
-
-	// Fetch the Vault from the environment
-	vaultUUID, envVarFound := os.LookupEnv(envVaultVar)
-
-	for i := 0; i < t.NumField(); i++ {
-		value := config.Field(i)
-		field := t.Field(i)
-		tag := field.Tag.Get(itemTag)
-
-		if tag == "" {
-			continue
-		}
-
-		if !value.CanSet() {
-			return fmt.Errorf("Cannot load config into private fields")
-		}
-
-		itemVault, err := vaultUUIDForField(&field, vaultUUID, envVarFound)
-		if err != nil {
-			return err
-		}
-
-		key := fmt.Sprintf("%s/%s", itemVault, tag)
-		parsed := items[key]
-		parsed.vaultUUID = itemVault
-		parsed.itemTitle = tag
-		parsed.fields = append(parsed.fields, &field)
-		parsed.values = append(parsed.values, &value)
-		items[key] = parsed
-	}
-
-	for _, item := range items {
-		if err := setValuesForTag(client, &item); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
-
 func vaultUUIDForField(field *reflect.StructField, vaultUUID string, envVaultFound bool) (string, error) {
 	// Check to see if a specific vault has been specified on the field
 	// If the env vault id has not been found and item doesn't have a vault
@@ -96,8 +53,14 @@ func vaultUUIDForField(field *reflect.StructField, vaultUUID string, envVaultFou
 	return vaultUUID, nil
 }
 
-func setValuesForTag(client Client, parsedItem *parsedItem) error {
-	item, err := client.GetItemByTitle(parsedItem.itemTitle, parsedItem.vaultUUID)
+func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error {
+	var item *onepassword.Item
+	var err error
+	if byTitle {
+		item, err = client.GetItemByTitle(parsedItem.itemTitle, parsedItem.vaultUUID)
+	} else {
+		item, err = client.GetItem(parsedItem.itemUUID, parsedItem.vaultUUID)
+	}
 	if err != nil {
 		return err
 	}
