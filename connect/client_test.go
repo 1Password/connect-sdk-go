@@ -388,11 +388,30 @@ func Test_restClient_DeleteItem(t *testing.T) {
 	}
 }
 
+func Test_restClient_DeleteItemById(t *testing.T) {
+	mockHTTPClient.Dofunc = deleteItem
+	err := testClient.DeleteItemByID(generateItem(defaultVault).ID, defaultVault)
+
+	if err != nil {
+		t.Logf("Unable to delete item: %s", err.Error())
+		t.FailNow()
+	}
+}
+
 func Test_restClient_DeleteItemError(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "Vault not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
 
 	err := testClient.DeleteItem(generateItem(defaultVault), defaultVault)
+
+	assert.ErrorIs(t, err, errResult)
+}
+
+func Test_restClient_DeleteItemByIdError(t *testing.T) {
+	errResult := apiError(http.StatusNotFound, "Vault not found")
+	mockHTTPClient.Dofunc = respondError(errResult)
+
+	err := testClient.DeleteItemByID(generateItem(defaultVault).ID, defaultVault)
 
 	assert.ErrorIs(t, err, errResult)
 }
