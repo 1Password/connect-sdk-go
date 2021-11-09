@@ -77,8 +77,15 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
 		}
 
-		if strings.HasSuffix(path,".") {
-			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
+		if strings.HasSuffix(path, ".") {
+			if field.Type == reflect.TypeOf(onepassword.ItemSection{}) {
+				section := &onepassword.ItemSection{
+					ID:    sectionIDForName(field.Tag.Get(sectionTag), item.Sections),
+					Label: sectionLabelForName(field.Tag.Get(sectionTag), item.Sections),
+				}
+				value.Set(reflect.ValueOf(*section))
+				return nil
+			}
 		}
 
 		sectionID := sectionIDForName(field.Tag.Get(sectionTag), item.Sections)
@@ -126,6 +133,20 @@ func sectionIDForName(name string, sections []*onepassword.ItemSection) string {
 	for _, s := range sections {
 		if name == strings.ToLower(s.Label) {
 			return s.ID
+		}
+	}
+
+	return ""
+}
+
+func sectionLabelForName(name string, sections []*onepassword.ItemSection) string {
+	if sections == nil {
+		return ""
+	}
+
+	for _, s := range sections {
+		if name == strings.ToLower(s.Label) {
+			return s.Label
 		}
 	}
 
