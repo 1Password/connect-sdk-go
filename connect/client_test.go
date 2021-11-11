@@ -273,9 +273,34 @@ func Test_restClient_GetItems(t *testing.T) {
 	}
 }
 
+type TestClient struct {
+	GetItemFunc func (itemUUID string, vaultUUID string) (*onepassword.Item, error)
+	*restClient
+}
+
+func generateComplexItem(uuid string, vaultUUID string) *onepassword.Item {
+	return &onepassword.Item{
+		ID:           uuid,
+		Title:        "",
+		Vault:        onepassword.ItemVault{ID: vaultUUID},
+		Fields:       []*onepassword.ItemField{
+			{Label: "Username", Value: "Wendy Appleseed"},
+		},
+	}
+}
+
+func (tc *TestClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
+	return tc.GetItemFunc(uuid, vaultUUID)
+}
+
 func Test_restClient_GetItemsByTitle(t *testing.T) {
+	var GetItemFunc = func(uuid string, vaultUUID string) (*onepassword.Item, error) {
+		return generateComplexItem(uuid, vaultUUID), nil
+	}
+	tempClient := TestClient{restClient: testClient}
+	tempClient.GetItemFunc = GetItemFunc
 	mockHTTPClient.Dofunc = listItems
-	items, err := testClient.GetItemsByTitle("test", uuid.New().String())
+	items, err := tempClient.GetItemsByTitle("test", uuid.New().String())
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
