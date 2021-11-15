@@ -37,6 +37,7 @@ type Client interface {
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	DeleteItemByID(itemUUID string, vaultUUID string) error
+	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
@@ -104,6 +105,32 @@ type restClient struct {
 	userAgent string
 	tracer    opentracing.Tracer
 	client    httpClient
+}
+
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error){
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	url := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, url, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(response.Body)
+	newStr := buf.String()
+	fmt.Printf(newStr)
+	fmt.Printf(response.Status)
+	var files []onepassword.File
+	if err := parseResponse(response, http.StatusOK, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 // GetVaults Get a list of all available vaults
