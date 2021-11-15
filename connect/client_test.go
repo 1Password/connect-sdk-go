@@ -532,8 +532,8 @@ func listItems(req *http.Request) (*http.Response, error) {
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
-	items := []onepassword.Item{
-		*generateItem(vaultUUID),
+	items := []*onepassword.Item{
+		generateItem(vaultUUID),
 	}
 
 	json, _ := json.Marshal(items)
