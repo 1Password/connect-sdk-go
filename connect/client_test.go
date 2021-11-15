@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -273,15 +274,9 @@ func Test_restClient_GetItems(t *testing.T) {
 	}
 }
 
-type TestClient struct {
-	GetItemFunc func (itemUUID string, vaultUUID string) (*onepassword.Item, error)
-	*restClient
-}
-
-func generateComplexItem(uuid string, vaultUUID string) *onepassword.Item {
-	return &onepassword.Item{
-		ID:           uuid,
-		Title:        "",
+func generateComplexItem(vaultUUID string) onepassword.Item {
+	return onepassword.Item{
+		Title:        "test",
 		Vault:        onepassword.ItemVault{ID: vaultUUID},
 		Fields:       []*onepassword.ItemField{
 			{Label: "Username", Value: "Wendy Appleseed"},
@@ -289,18 +284,17 @@ func generateComplexItem(uuid string, vaultUUID string) *onepassword.Item {
 	}
 }
 
-func (tc *TestClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
-	return tc.GetItemFunc(uuid, vaultUUID)
+func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
+	if strings.Contains(req.URL.Path, "filter") {
+		return listItems(req)
+	} else {
+		return getItem(req)
+	}
 }
 
 func Test_restClient_GetItemsByTitle(t *testing.T) {
-	var GetItemFunc = func(uuid string, vaultUUID string) (*onepassword.Item, error) {
-		return generateComplexItem(uuid, vaultUUID), nil
-	}
-	tempClient := TestClient{restClient: testClient}
-	tempClient.GetItemFunc = GetItemFunc
-	mockHTTPClient.Dofunc = listItems
-	items, err := tempClient.GetItemsByTitle("test", uuid.New().String())
+	mockHTTPClient.Dofunc = listItemsOrGetItem
+	items, err := testClient.GetItemsByTitle("", "")
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
