@@ -286,9 +286,21 @@ func generateComplexItem(vaultUUID string) onepassword.Item {
 
 func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
 	if strings.Contains(req.URL.RequestURI(), "test-item") {
-		return listItems(req)
+		json, _ := json.Marshal([]onepassword.Item{generateComplexItem("")})
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
 	} else {
-		return getItem(req)
+		json, _ := json.Marshal(generateComplexItem(""))
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
 	}
 }
 
@@ -306,7 +318,8 @@ func Test_restClient_GetItemsByTitle(t *testing.T) {
 		t.FailNow()
 	}
 
-	assert.Equal(t, items[0].Title, "test-item")
+	assert.Equal(t, items[0].Title, "test")
+	assert.NotEqual(t, len(items[0].Fields), 0)
 }
 
 func Test_restClient_GetItemByTitle(t *testing.T) {
