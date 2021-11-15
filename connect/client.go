@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -268,13 +267,7 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 		return nil, err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bodyString := string(bodyBytes)
-	print(bodyString)
-	var items []*onepassword.Item
+	var items []onepassword.Item
 	if err := parseResponse(response, http.StatusOK, &items); err != nil {
 		return nil, err
 	}

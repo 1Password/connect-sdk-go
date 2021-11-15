@@ -285,7 +285,7 @@ func generateComplexItem(vaultUUID string) onepassword.Item {
 }
 
 func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
-	if strings.Contains(req.URL.Path, "filter") {
+	if strings.Contains(req.URL.RequestURI(), "test-item") {
 		return listItems(req)
 	} else {
 		return getItem(req)
@@ -294,7 +294,7 @@ func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
 
 func Test_restClient_GetItemsByTitle(t *testing.T) {
 	mockHTTPClient.Dofunc = listItemsOrGetItem
-	items, err := testClient.GetItemsByTitle("", "")
+	items, err := testClient.GetItemsByTitle("test-item", "")
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -305,6 +305,8 @@ func Test_restClient_GetItemsByTitle(t *testing.T) {
 		t.Logf("Expected 1 item to exist in vault, found %d", len(items))
 		t.FailNow()
 	}
+
+	assert.Equal(t, items[0].Title, "test-item")
 }
 
 func Test_restClient_GetItemByTitle(t *testing.T) {
@@ -518,6 +520,7 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 func generateItem(vaultUUID string) *onepassword.Item {
 	return &onepassword.Item{
 		ID: uuid.New().String(),
+		Title: "test-item",
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
 		},
@@ -529,8 +532,8 @@ func listItems(req *http.Request) (*http.Response, error) {
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
-	items := []*onepassword.Item{
-		generateItem(vaultUUID),
+	items := []onepassword.Item{
+		*generateItem(vaultUUID),
 	}
 
 	json, _ := json.Marshal(items)
