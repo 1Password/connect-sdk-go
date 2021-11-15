@@ -202,7 +202,6 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 	}
 
 	return &item, nil
-
 }
 
 func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error) {
