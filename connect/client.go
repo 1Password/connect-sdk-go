@@ -432,6 +432,9 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 		return content, nil
 	}
 	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return nil, err
+	}
 	content, err := readResponseBody(response, http.StatusOK)
 	if err != nil {
 		return nil, err
@@ -464,9 +467,7 @@ func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirector
 		return "", err
 	}
 
-	abs, err := filepath.Abs(path)
-
-	return abs, nil
+	return path, nil
 }
 
 func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Response, error) {
