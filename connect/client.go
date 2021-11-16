@@ -431,7 +431,45 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if content, err := file.Content(); err == nil {
 		return content, nil
 	}
+	response, err := rs.retrieveDocumentContent(file)
+	content, err := readResponseBody(response, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	file.SetContent(content)
+	return content, nil
+}
 
+func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error) {
+	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
+	if err != nil {
+		return "", err
+	}
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
+	dst, err := os.Create(path)
+	if err != nil {
+		return "", err
+	}
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+	if _, err = io.Copy(dst, response.Body); err != nil {
+		return "", err
+	}
+
+	abs, err := filepath.Abs(path)
+
+	return abs, nil
+}
+
+func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Response, error) {
 	span := rs.tracer.StartSpan("GetFileContent")
 	defer span.Finish()
 
@@ -447,42 +485,7 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
 		return nil, err
 	}
-
-	content, err := readResponseBody(response, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-
-	file.SetContent(content)
-	return content, nil
-}
-
-func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error) {
-	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
-	if err != nil {
-		return "", err
-	}
-	content, err := rs.GetFileContent(file)
-	if err != nil {
-		return "", err
-	}
-
-	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
-	dst, err := os.Create(path)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(path, 0600)
-	if err != nil {
-		return "", err
-	}
-	defer dst.Close()
-	reader := bytes.NewReader(content)
-	if _, err = io.Copy(dst, reader); err != nil {
-		return "", err
-	}
-
-	return filepath.Clean(path), nil
+	return response, nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
