@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/opentracing/opentracing-go"
@@ -40,6 +41,7 @@ type Client interface {
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
+	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) error
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -107,12 +109,12 @@ type restClient struct {
 	client    httpClient
 }
 
-func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error){
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
 	span := rs.tracer.StartSpan("GetFiles")
 	defer span.Finish()
 
-	url := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
-	request, err := rs.buildRequest(http.MethodGet, url, http.NoBody, span)
+	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
 	if err != nil {
 		return nil, err
 	}
@@ -120,17 +122,38 @@ func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword
 	if err != nil {
 		return nil, err
 	}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(response.Body)
-	newStr := buf.String()
-	fmt.Printf(newStr)
-	fmt.Printf(response.Status)
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
 	var files []onepassword.File
 	if err := parseResponse(response, http.StatusOK, &files); err != nil {
 		return nil, err
 	}
 
 	return files, nil
+}
+
+func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) error {
+	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
+	if err != nil {
+		return err
+	}
+	content, err := rs.GetFileContent(file)
+	if err != nil {
+		return err
+	}
+
+	dst, err := os.Create(filepath.Join(targetDirectory, filepath.Base(file.Name)))
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+	reader := bytes.NewReader(content)
+	if _, err = io.Copy(dst, reader); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetVaults Get a list of all available vaults
