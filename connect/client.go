@@ -41,7 +41,7 @@ type Client interface {
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
-	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) error
+	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -107,53 +107,6 @@ type restClient struct {
 	userAgent string
 	tracer    opentracing.Tracer
 	client    httpClient
-}
-
-func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
-	span := rs.tracer.StartSpan("GetFiles")
-	defer span.Finish()
-
-	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
-	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
-	if err != nil {
-		return nil, err
-	}
-	response, err := rs.client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
-		return nil, err
-	}
-	var files []onepassword.File
-	if err := parseResponse(response, http.StatusOK, &files); err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
-
-func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) error {
-	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
-	if err != nil {
-		return err
-	}
-	content, err := rs.GetFileContent(file)
-	if err != nil {
-		return err
-	}
-
-	dst, err := os.Create(filepath.Join(targetDirectory, filepath.Base(file.Name)))
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-	reader := bytes.NewReader(content)
-	if _, err = io.Copy(dst, reader); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // GetVaults Get a list of all available vaults
@@ -420,6 +373,30 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 	return nil
 }
 
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+	var files []onepassword.File
+	if err := parseResponse(response, http.StatusOK, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
 func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
@@ -478,6 +455,34 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 
 	file.SetContent(content)
 	return content, nil
+}
+
+func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error) {
+	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
+	if err != nil {
+		return "", err
+	}
+	content, err := rs.GetFileContent(file)
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
+	dst, err := os.Create(path)
+	if err != nil {
+		return "", err
+	}
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+	reader := bytes.NewReader(content)
+	if _, err = io.Copy(dst, reader); err != nil {
+		return "", err
+	}
+
+	return filepath.Clean(path), nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
