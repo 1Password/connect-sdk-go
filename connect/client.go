@@ -41,7 +41,7 @@ type Client interface {
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
-	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error)
+	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string, overwrite bool) (string, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -443,7 +443,7 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	return content, nil
 }
 
-func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string) (string, error) {
+func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string, overwrite bool) (string, error) {
 	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
 	if err != nil {
 		return "", err
@@ -454,16 +454,27 @@ func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirector
 	}
 
 	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
-	dst, err := os.Create(path)
-	if err != nil {
-		return "", err
+
+	var osFile *os.File
+
+	if overwrite {
+		osFile, err = createFile(path)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			osFile, err = createFile(path)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", fmt.Errorf("a file already exists under the %s path. you may want to enable the `overwrite` flag", path)
+		}
 	}
-	err = os.Chmod(path, 0600)
-	if err != nil {
-		return "", err
-	}
-	defer dst.Close()
-	if _, err = io.Copy(dst, response.Body); err != nil {
+	defer osFile.Close()
+	if _, err = io.Copy(osFile, response.Body); err != nil {
 		return "", err
 	}
 
@@ -487,6 +498,18 @@ func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Res
 		return nil, err
 	}
 	return response, nil
+}
+
+func createFile(path string) (*os.File, error) {
+	osFile, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return osFile, nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
