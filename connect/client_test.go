@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -277,10 +277,18 @@ func Test_restClient_GetItems(t *testing.T) {
 
 func generateComplexItem(vaultUUID string) onepassword.Item {
 	return onepassword.Item{
-		Title:        "test",
-		Vault:        onepassword.ItemVault{ID: vaultUUID},
-		Fields:       []*onepassword.ItemField{
-			{Label: "Username", Value: "Wendy Appleseed"},
+		Title: "test",
+		Vault: onepassword.ItemVault{ID: vaultUUID},
+		Sections: []*onepassword.ItemSection{{
+			ID:    "",
+			Label: "section",
+		}},
+		Fields: []*onepassword.ItemField{
+			{Label: "username", Value: "wendy"},
+			{Label: "password", Value: "appleseed", Section: &onepassword.ItemSection{
+				ID:    "",
+				Label: "section",
+			}},
 		},
 	}
 }
@@ -558,36 +566,9 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 	}
 }
 
-func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
-	return &onepassword.Item{
-		ID: itemUUID,
-		Vault: onepassword.ItemVault{
-			ID: vaultUUID,
-		},
-		Sections: []*onepassword.ItemSection{{
-			ID:    "",
-			Label: "section",
-		}},
-		Fields: []*onepassword.ItemField{{
-			ID:    uuid.New().String(),
-			Label: "username",
-			Value: "wendy",
-		}, {
-			ID:    uuid.New().String(),
-			Label: "password",
-			Value: "appleseed",
-			Section: &onepassword.ItemSection{
-				ID:    "",
-				Label: "section",
-			},
-		},
-		},
-	}
-}
-
 func generateItem(vaultUUID string) *onepassword.Item {
 	return &onepassword.Item{
-		ID: uuid.New().String(),
+		ID:    uuid.New().String(),
 		Title: "test-item",
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
@@ -642,11 +623,10 @@ func getItemByID(req *http.Request) (*http.Response, error) {
 
 func getComplexItem(req *http.Request) (*http.Response, error) {
 	vaultUUID := ""
-	itemUUID := ""
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
-	json, _ := json.Marshal(generateComplexItem(vaultUUID, itemUUID))
+	json, _ := json.Marshal(generateComplexItem(vaultUUID))
 	return &http.Response{
 		Status:     http.StatusText(http.StatusOK),
 		StatusCode: http.StatusOK,
