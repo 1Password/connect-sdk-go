@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -452,6 +453,33 @@ func Test_restClient_GetFileContentError(t *testing.T) {
 	assert.ErrorIs(t, err, errResult)
 }
 
+func Test_restClient_loadStructFromItem(t *testing.T) {
+	type testConfig struct {
+		Username string                  `opfield:"username"`
+		Password string                  `opsection:"section" opfield:"password"`
+		Section  onepassword.ItemSection `opsection:"section"`
+	}
+	mockHTTPClient.Dofunc = getComplexItem
+
+	item := parsedItem{
+		vaultUUID: "",
+		itemUUID:  "",
+	}
+	c := testConfig{}
+
+	err := loadToStruct(&item, reflect.ValueOf(&c).Elem())
+	assert.Nil(t, err)
+	err = setValuesForTag(testClient, &item, false)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "wendy", c.Username)
+	assert.Equal(t, "appleseed", c.Password)
+	assert.Equal(t, onepassword.ItemSection{
+		ID:    "",
+		Label: "section",
+	}, c.Section)
+}
+
 func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		body, err := json.Marshal(apiErr)
@@ -493,6 +521,33 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 			Body:       ioutil.NopCloser(bytes.NewReader(json)),
 			Header:     req.Header,
 		}, nil
+	}
+}
+
+func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
+	return &onepassword.Item{
+		ID: itemUUID,
+		Vault: onepassword.ItemVault{
+			ID: vaultUUID,
+		},
+		Sections: []*onepassword.ItemSection{{
+			ID:    "",
+			Label: "section",
+		}},
+		Fields: []*onepassword.ItemField{{
+			ID:    uuid.New().String(),
+			Label: "username",
+			Value: "wendy",
+		}, {
+			ID:    uuid.New().String(),
+			Label: "password",
+			Value: "appleseed",
+			Section: &onepassword.ItemSection{
+				ID:    "",
+				Label: "section",
+			},
+		},
+		},
 	}
 }
 
@@ -548,6 +603,21 @@ func getItemByID(req *http.Request) (*http.Response, error) {
 	}
 
 	return getItem(req)
+}
+
+func getComplexItem(req *http.Request) (*http.Response, error) {
+	vaultUUID := ""
+	itemUUID := ""
+	excessPath := ""
+	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
+
+	json, _ := json.Marshal(generateComplexItem(vaultUUID, itemUUID))
+	return &http.Response{
+		Status:     http.StatusText(http.StatusOK),
+		StatusCode: http.StatusOK,
+		Body:       ioutil.NopCloser(bytes.NewReader(json)),
+		Header:     req.Header,
+	}, nil
 }
 
 func getItem(req *http.Request) (*http.Response, error) {

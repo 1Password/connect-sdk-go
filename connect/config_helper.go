@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	vaultTag = "opvault"
-	itemTag  = "opitem"
-	fieldTag = "opfield"
+	vaultTag   = "opvault"
+	itemTag    = "opitem"
+	sectionTag = "opsection"
+	fieldTag   = "opfield"
 
 	envVaultVar = "OP_VAULT"
 )
@@ -67,8 +68,8 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 
 	for i, field := range parsedItem.fields {
 		value := parsedItem.values[i]
-		path := field.Tag.Get(fieldTag)
-		if path == "" {
+		path := fmt.Sprintf("%s.%s", field.Tag.Get(sectionTag), field.Tag.Get(fieldTag))
+		if path == "." {
 			if field.Type == reflect.TypeOf(onepassword.Item{}) {
 				value.Set(reflect.ValueOf(*item))
 				return nil
@@ -76,14 +77,18 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
 		}
 
-		pathParts := strings.Split(path, ".")
-
-		if len(pathParts) != 2 {
-			return fmt.Errorf("Invalid field path format for %q", field.Name)
+		if strings.HasSuffix(path, ".") {
+			if field.Type == reflect.TypeOf(onepassword.ItemSection{}) {
+				section := &onepassword.ItemSection{
+					ID:    sectionIDForName(field.Tag.Get(sectionTag), item.Sections),
+					Label: sectionLabelForName(field.Tag.Get(sectionTag), item.Sections),
+				}
+				value.Set(reflect.ValueOf(*section))
+				return nil
+			}
 		}
 
-		sectionID := sectionIDForName(pathParts[0], item.Sections)
-		label := pathParts[1]
+		sectionID := sectionIDForName(field.Tag.Get(sectionTag), item.Sections)
 
 		for _, f := range item.Fields {
 			fieldSectionID := ""
@@ -91,7 +96,7 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 				fieldSectionID = f.Section.ID
 			}
 
-			if fieldSectionID == sectionID && f.Label == label {
+			if fieldSectionID == sectionID && f.Label == field.Tag.Get(fieldTag) {
 				if err := setValue(value, f.Value); err != nil {
 					return err
 				}
@@ -128,6 +133,20 @@ func sectionIDForName(name string, sections []*onepassword.ItemSection) string {
 	for _, s := range sections {
 		if name == strings.ToLower(s.Label) {
 			return s.ID
+		}
+	}
+
+	return ""
+}
+
+func sectionLabelForName(name string, sections []*onepassword.ItemSection) string {
+	if sections == nil {
+		return ""
+	}
+
+	for _, s := range sections {
+		if name == strings.ToLower(s.Label) {
+			return s.Label
 		}
 	}
 
