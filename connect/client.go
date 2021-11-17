@@ -41,7 +41,7 @@ type Client interface {
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
-	DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string, overwrite bool) (string, error)
+	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -443,11 +443,7 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	return content, nil
 }
 
-func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirectory string, overwrite bool) (string, error) {
-	file, err := rs.GetFile(fileUUID, itemUUID, vaultUUID)
-	if err != nil {
-		return "", err
-	}
+func (rs *restClient) DownloadFile(file *onepassword.File, targetDirectory string, overwriteIfExists bool) (string, error) {
 	response, err := rs.retrieveDocumentContent(file)
 	if err != nil {
 		return "", err
@@ -457,7 +453,7 @@ func (rs *restClient) DownloadFile(fileUUID, itemUUID, vaultUUID, targetDirector
 
 	var osFile *os.File
 
-	if overwrite {
+	if overwriteIfExists {
 		osFile, err = createFile(path)
 		if err != nil {
 			return "", err
