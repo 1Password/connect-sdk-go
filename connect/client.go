@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/opentracing/opentracing-go"
@@ -37,8 +38,10 @@ type Client interface {
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	DeleteItemByID(itemUUID string, vaultUUID string) error
+	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
+	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -370,6 +373,30 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 	return nil
 }
 
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+	var files []onepassword.File
+	if err := parseResponse(response, http.StatusOK, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
 func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
@@ -404,7 +431,53 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if content, err := file.Content(); err == nil {
 		return content, nil
 	}
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return nil, err
+	}
+	content, err := readResponseBody(response, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	file.SetContent(content)
+	return content, nil
+}
 
+func (rs *restClient) DownloadFile(file *onepassword.File, targetDirectory string, overwriteIfExists bool) (string, error) {
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
+
+	var osFile *os.File
+
+	if overwriteIfExists {
+		osFile, err = createFile(path)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			osFile, err = createFile(path)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", fmt.Errorf("a file already exists under the %s path. you may want to enable the `overwrite` flag", path)
+		}
+	}
+	defer osFile.Close()
+	if _, err = io.Copy(osFile, response.Body); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
+func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Response, error) {
 	span := rs.tracer.StartSpan("GetFileContent")
 	defer span.Finish()
 
@@ -420,14 +493,19 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
 		return nil, err
 	}
+	return response, nil
+}
 
-	content, err := readResponseBody(response, http.StatusOK)
+func createFile(path string) (*os.File, error) {
+	osFile, err := os.Create(path)
 	if err != nil {
 		return nil, err
 	}
-
-	file.SetContent(content)
-	return content, nil
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return osFile, nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
