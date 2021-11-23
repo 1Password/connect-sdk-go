@@ -466,7 +466,7 @@ func (rs *restClient) DownloadFile(file *onepassword.File, targetDirectory strin
 				return "", err
 			}
 		} else {
-			return "", fmt.Errorf("a file already exists under the %s path. you may want to enable the `overwrite` flag", path)
+			return "", fmt.Errorf("a file already exists under the %s path. in order to overwrite it, set `overwriteIfExists` to true", path)
 		}
 	}
 	defer osFile.Close()

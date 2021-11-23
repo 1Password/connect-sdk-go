@@ -105,6 +105,7 @@ The `connect.Client` also supports methods for:
 - Creating Items in a Vault
 - Updating Items
 - Deleting Items
+- Retrieving and Downloading Files
 
 ### Errors
 All errors returned by Connect API are unmarshalled into a `onepassword.Error` struct:
