@@ -147,45 +147,52 @@ The `onepassword.Item` model represents items and `onepassword.Vault` represents
 
 ### Item CRUD
 
-The `connect.Client` also supports methods for:
+The `connect.Client` supports methods for:
 
-#### Retrieving list of vaults that the Connect token has permission to read
+#### Retrieving a list of vaults that the Connect token has permission to read
 ```go
 	vaults, err := client.GetVaults()
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-#### Retrieving all items in a vault
+#### Retrieving a vault:
 ```go
-	items, err := client.GetItems("<vault-uuid>")
+	vault, err := client.GetVault("vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-#### Retrieving item by title
+#### Retrieving all items in a vault
+```go
+	items, err := client.GetItems("vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+#### Retrieving an item by title
 To retrieve all items in a vault with a given title:
 ```go
-	items, err := client.GetItemsByTitle("<items-title>", "<vault-uuid>")
+	items, err := client.GetItemsByTitle("items-title", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
 In case the item title is unique for a vault, another function is available as well, returning only one item, instead of a slice:
 ```go
-	item, err := client.GetItemByTitle("<item-title>", "<vault-uuid>")
+	item, err := client.GetItemByTitle("item-title", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-#### Retrieving items by vault and item UUID
+#### Retrieving items by vault UUID and item UUID
 ```go
-	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-#### Creating items in a vault
+#### Creating an item in a vault
 ```go
 	item := &onepassword.Item{
 		Fields: []*onepassword.ItemField{{
@@ -197,27 +204,37 @@ In case the item title is unique for a vault, another function is available as w
 		Title:    "Secret String",
 	}
 
-	postedItem, err := client.CreateItem(item, "<vault-uuid>")
+	postedItem, err := client.CreateItem(item, "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
-#### Update and Item
+#### Updating an item
 ```go
-	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 	item.Title = "new title"
-	client.UpdateItem(item, "<vault-uuid>")
+	client.UpdateItem(item, "vault-uuid")
 ```
-#### Delete an item
+#### Deleting an item
 ```go
-	item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 	err = client.DeleteItem(item, "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+#### Deleting an item by UUID
+```go
+	err := client.DeleteItemByID("item-uuid", "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
 ```
 #### Retrieving a file from an item
 ```go
@@ -228,11 +245,29 @@ In case the item title is unique for a vault, another function is available as w
 ```
 #### Retrieving the contents of a file from an item
 ```go
-	file, err := client.GetFile("<file-uuid>", "item-uuid", "vault-uuid")
+	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 	content, err := client.GetFileContent(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+#### Retrieving all files under an item
+```go
+	files, err := client.GetFiles("item-uuid", "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+```
+#### Downloading a file
+```go	
+	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
+	if err != nil {
+		log.Fatal(err)
+	}
+	path, err := client.DownloadFile(file, "local/path/to/file", true)
 	if err != nil {
 		log.Fatal(err)
 	}
