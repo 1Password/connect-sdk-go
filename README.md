@@ -54,7 +54,8 @@ Import the 1Password Connect SDK:
 
 ```go
 import (
-    "github.com/secrethub/secrethub-go/pkg/secrethub"
+    	"github.com/1Password/connect-sdk-go/connect"
+	"github.com/1Password/connect-sdk-go/onepassword"
 )
 ```
 
