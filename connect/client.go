@@ -10,8 +10,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"reflect"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	jaegerClientConfig "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-client-go/zipkin"
@@ -35,8 +37,14 @@ type Client interface {
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
+	DeleteItemByID(itemUUID string, vaultUUID string) error
+	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
+	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
+	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
+	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
+	LoadStruct(config interface{}) error
 }
 
 type httpClient interface {
@@ -342,6 +350,53 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 	return nil
 }
 
+// DeleteItem Delete a new item in a specified vault, specifying the item's uuid
+func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+	span := rs.tracer.StartSpan("DeleteItemByID")
+	defer span.Finish()
+
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodDelete, itemURL, http.NoBody, span)
+	if err != nil {
+		return err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if err := parseResponse(response, http.StatusNoContent, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+	var files []onepassword.File
+	if err := parseResponse(response, http.StatusOK, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
 func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
@@ -376,7 +431,53 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if content, err := file.Content(); err == nil {
 		return content, nil
 	}
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return nil, err
+	}
+	content, err := readResponseBody(response, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	file.SetContent(content)
+	return content, nil
+}
 
+func (rs *restClient) DownloadFile(file *onepassword.File, targetDirectory string, overwriteIfExists bool) (string, error) {
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
+
+	var osFile *os.File
+
+	if overwriteIfExists {
+		osFile, err = createFile(path)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			osFile, err = createFile(path)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", fmt.Errorf("a file already exists under the %s path. In order to overwrite it, set `overwriteIfExists` to true", path)
+		}
+	}
+	defer osFile.Close()
+	if _, err = io.Copy(osFile, response.Body); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
+func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Response, error) {
 	span := rs.tracer.StartSpan("GetFileContent")
 	defer span.Finish()
 
@@ -392,14 +493,19 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
 		return nil, err
 	}
+	return response, nil
+}
 
-	content, err := readResponseBody(response, http.StatusOK)
+func createFile(path string) (*os.File, error) {
+	osFile, err := os.Create(path)
 	if err != nil {
 		return nil, err
 	}
-
-	file.SetContent(content)
-	return content, nil
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return osFile, nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
@@ -421,6 +527,112 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 	rs.tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(request.Header))
 
 	return request, nil
+}
+
+func loadToStruct(item *parsedItem, config reflect.Value) error {
+	t := config.Type()
+	for i := 0; i < t.NumField(); i++ {
+		value := config.Field(i)
+		field := t.Field(i)
+
+		if !value.CanSet() {
+			return fmt.Errorf("cannot load config into private fields")
+		}
+
+		item.fields = append(item.fields, &field)
+		item.values = append(item.values, &value)
+	}
+	return nil
+}
+
+func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemUUID = itemUUID
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
+	if err := setValuesForTag(rs, &item, false); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
+func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+	item := parsedItem{}
+	item.itemTitle = itemTitle
+	item.vaultUUID = vaultUUID
+
+	if err := loadToStruct(&item, config); err != nil {
+		return err
+	}
+	if err := setValuesForTag(rs, &item, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadConfig Load configuration values based on struct tag
+func (rs *restClient) LoadStruct(i interface{}) error {
+	config, err := checkStruct(i)
+	if err != nil {
+		return err
+	}
+
+	t := config.Type()
+
+	// Multiple fields may be from a single item so we will collect them
+	items := map[string]parsedItem{}
+
+	// Fetch the Vault from the environment
+	vaultUUID, envVarFound := os.LookupEnv(envVaultVar)
+
+	for i := 0; i < t.NumField(); i++ {
+		value := config.Field(i)
+		field := t.Field(i)
+		tag := field.Tag.Get(itemTag)
+
+		if tag == "" {
+			continue
+		}
+
+		if !value.CanSet() {
+			return fmt.Errorf("Cannot load config into private fields")
+		}
+
+		itemVault, err := vaultUUIDForField(&field, vaultUUID, envVarFound)
+		if err != nil {
+			return err
+		}
+
+		key := fmt.Sprintf("%s/%s", itemVault, tag)
+		parsed := items[key]
+		parsed.vaultUUID = itemVault
+		parsed.itemTitle = tag
+		parsed.fields = append(parsed.fields, &field)
+		parsed.values = append(parsed.values, &value)
+		items[key] = parsed
+	}
+
+	for _, item := range items {
+		if err := setValuesForTag(rs, &item, true); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func parseResponse(resp *http.Response, expectedStatusCode int, result interface{}) error {

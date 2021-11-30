@@ -321,7 +321,6 @@ package main
 
 import "github.com/1Password/connect-sdk-go/connect"
 
-
 type Config struct {
 	Username string     `opfield:"username"`
 	Password string     `opfield:"password"`
@@ -344,7 +343,6 @@ The Connect Go SDK makes use of the following environment variables:
 * `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
 * `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
 * `OP_VAULT`: a vault UUID. Used as default vault in the `LoadStruct`, `LoadStructFromItemByTitle` and `LoadStructFromItem` functions, for all fields where the `opvault` tag is not set.
-
 
 ### Errors
 All errors returned by Connect API are unmarshalled into a `onepassword.Error` struct:
