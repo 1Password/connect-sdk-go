@@ -244,11 +244,16 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 - `opvault` – The UUID of the vault the item should come from
 - `opitem` – The title of the Item
+- `opsection` - The section where the required field is located 
 - `opfield` – The item field whose value should be retrieved
+
+All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag. 
+In case this is not set, the SDK will use the value of the `OP_VAULT` environment variable as the default UUID.
+If a field is within a section, the `opsection` tag is required as well. Please note that one cannot retrieve a section in itself.
 
 #### Example Struct
 
-This example struct will retrieve 3 fields from one Item and a whole Item from another vault
+This example struct will retrieve 3 fields from one item and a whole item from another vault:
 
 ```go
 package main
@@ -259,23 +264,43 @@ import (
 )
 
 type Config struct {
-	Database string           `opitem:"Demo TF Database" opfield:".database"`
-	Username string           `opitem:"Demo TF Database" opfield:".username"`
-	Password string           `opitem:"Demo TF Database" opfield:".password"`
+	Username string           `opitem:"Demo TF Database" opfield:"username"`
+	Password string           `opitem:"Demo TF Database" opfield:"password"`
+        Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"hostname"`
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
-
-var client connect.Client
 
 func main() {
 	client, err := connect.NewClientFromEnvironment()
 	if err != nil {
 		panic(err)
 	}
-	
-	connect.Load(client, &c)
+    	c := Config{}
+	err = client.LoadStruct(&c)
 }
 
+```
+Additionally, fields of the same item can be added to a struct at once, without needing to specify the `opitem` or `opvault` tags:
+```go
+package main
+
+import "github.com/1Password/connect-sdk-go/connect"
+
+
+type Config struct {
+	Username string     `opfield:"username"`
+	Password string     `opfield:"password"`
+}
+
+func main () {
+	client, err := connect.NewClientFromEnvironment()
+    	if err != nil {
+		panic(err)
+	}
+	c := Config{}
+	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4") // retrieve using item title
+        err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4") // retrieve using item uuid
+}
 ```
 
 ### Environment Variables
@@ -283,7 +308,7 @@ func main() {
 The Connect Go SDK makes use of the following environment variables:
 * `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
 * `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
-* `OP_VAULT`: a vault UUID. Used as default vault in the `LoadConfig` function, for all fields where the `.opvault` tag is not set.
+* `OP_VAULT`: a vault UUID. Used as default vault in the `LoadStruct`, `LoadStructFromItemByTitle` and `LoadStructFromItem` functions, for all fields where the `opvault` tag is not set.
 
 
 ### Errors
