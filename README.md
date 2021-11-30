@@ -75,7 +75,10 @@ func main () {
 
 Writing a secret:
 ```go
-import "github.com/1Password/connect-sdk-go/connect"
+import (
+    	"github.com/1Password/connect-sdk-go/connect"
+	"github.com/1Password/connect-sdk-go/onepassword"
+)
 
 func main () {
 	client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
