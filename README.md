@@ -100,8 +100,8 @@ func main () {
 
 ### Creating an API Client
 
-A !password Connect client (`connect.Client`) is required to make requests to the Connect server via the 1Password Go SDK.
-The client is configured with a token and a hostname. Three constructor methods are provided by that allow for creating the 1Password Connect client.
+A 1Password Connect client (`connect.Client`) is required to make requests to the Connect server via the 1Password Go SDK.
+The client is configured with a token and a hostname. Three constructor methods that allow for creating the 1Password Connect client are provided.
 
 * `connect.NewClient` – Accepts a hostname and a token value.
 ```go
@@ -116,7 +116,7 @@ func main () {
 
 * `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment, and expects these to be passed as environment variables (`OP_CONNECT_HOST` and `OP_CONNECT_TOKEN`, respectively).
 
-Assuming that OP_CONNECT_TOKEN and OP_CONNECT_HOST have been set as environment variables, the `connect.NewClientFromEnvironment` can be invoked as such:
+Assuming that `OP_CONNECT_TOKEN` and `OP_CONNECT_HOST` have been set as environment variables, the `connect.NewClientFromEnvironment` can be invoked as such:
 ```go
 package main
 
@@ -140,8 +140,6 @@ func main () {
 	client := connect.NewClientWithUserAgent("<your_connect_host>", "<your_connect_token>", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) FxiOS/8.1.1b4948 Mobile/14F89 Safari/603.2.4")
 }
 ```
-
-[comment]: <> (The following subsection will be modified upon the merging of PR #31)
 
 ### Model Objects
 
