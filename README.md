@@ -40,24 +40,23 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 
 - [1Password Connect](https://support.1password.com/secrets-automation/#step-2-deploy-a-1password-connect-server) deployed in your infrastructure
 
-## Installation
+## Installation and Importing
 To download and install the 1Password Connect Go SDK, as well as its dependencies:
 ```sh
 go get github.com/1Password/connect-sdk-go
 ```
 
-## Usage
-
-Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go). 
-
-Import the 1Password Connect SDK:
-
+To import the 1Password Connect SDK in your Go project:
 ```go
 import (
     	"github.com/1Password/connect-sdk-go/connect"
 	"github.com/1Password/connect-sdk-go/onepassword"
 )
 ```
+
+## Usage
+
+Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go). 
 
 ### Quickstart
 
@@ -73,6 +72,29 @@ func main () {
 	}
 }
 ```
+
+Writing a secret:
+```go
+import "github.com/1Password/connect-sdk-go/connect"
+
+func main () {
+	client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
+	item := &onepassword.Item{
+		Fields: []*onepassword.ItemField{{
+			Value: "mysecret",
+			Type: "STRING",
+		}},
+		Category: onepassword.Login,
+		Title:    "Secret String",
+	}
+
+	postedItem, err := client.CreateItem(item, "<vault-uuid>")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
 ### Creating an API Client
 
 A !password Connect client (`connect.Client`) is required to make requests to the Connect server via the 1Password Go SDK.
