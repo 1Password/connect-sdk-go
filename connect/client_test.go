@@ -35,6 +35,8 @@ type mockClient struct {
 	Dofunc func(req *http.Request) (*http.Response, error)
 }
 
+const testVaultID = "4eh55wjehsta5f376ggwsplxs4"
+
 func (mc *mockClient) Do(req *http.Request) (*http.Response, error) {
 	resp, err := mc.Dofunc(req)
 	if err != nil {
@@ -191,7 +193,7 @@ func Test_restClient_GetVault(t *testing.T) {
 	expectedVault := &onepassword.Vault{
 		Name:        "Test vault",
 		Description: "Test Vault description",
-		ID:          uuid.New().String(),
+		ID:          "4eh55wjehsta5f376ggwsplxs4",
 	}
 
 	mockHTTPClient.Dofunc = getVault(expectedVault)
@@ -212,7 +214,7 @@ func Test_restClient_GetVaultEmptyUUID(t *testing.T) {
 func Test_restClient_GetVaultError(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "Vault not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
-	_, err := testClient.GetVault(uuid.New().String())
+	_, err := testClient.GetVault("4eh55wjehsta5f376ggwsplxs4")
 
 	assert.ErrorIs(t, err, errResult)
 }
@@ -234,7 +236,7 @@ func Test_restClient_GetVaultsByTitle(t *testing.T) {
 
 func Test_restClient_GetItem(t *testing.T) {
 	mockHTTPClient.Dofunc = getItem
-	item, err := testClient.GetItem(uuid.New().String(), uuid.New().String())
+	item, err := testClient.GetItem("4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4")
 
 	if err != nil {
 		t.Logf("Unable to get items: %s", err.Error())
@@ -250,7 +252,7 @@ func Test_restClient_GetItem(t *testing.T) {
 func Test_restClient_GetItemNotFound(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "item not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
-	item, err := testClient.GetItem(uuid.New().String(), uuid.New().String())
+	item, err := testClient.GetItem("4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4")
 
 	assert.ErrorIs(t, err, errResult)
 	if item != nil {
@@ -261,7 +263,7 @@ func Test_restClient_GetItemNotFound(t *testing.T) {
 
 func Test_restClient_GetItems(t *testing.T) {
 	mockHTTPClient.Dofunc = listItems
-	items, err := testClient.GetItems(uuid.New().String())
+	items, err := testClient.GetItems("4eh55wjehsta5f376ggwsplxs4")
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -276,7 +278,7 @@ func Test_restClient_GetItems(t *testing.T) {
 
 func Test_restClient_GetItemsByTitle(t *testing.T) {
 	mockHTTPClient.Dofunc = listItems
-	items, err := testClient.GetItemsByTitle("test", uuid.New().String())
+	items, err := testClient.GetItemsByTitle("test", "4eh55wjehsta5f376ggwsplxs4")
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -293,7 +295,7 @@ func Test_restClient_GetItemByTitle(t *testing.T) {
 	defer reset()
 
 	mockHTTPClient.Dofunc = getItemByID
-	item, err := testClient.GetItemByTitle("test", uuid.New().String())
+	item, err := testClient.GetItemByTitle("test", "4eh55wjehsta5f376ggwsplxs4")
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -311,7 +313,7 @@ func Test_restClient_GetItemByNonUniqueTitle(t *testing.T) {
 	defer reset()
 
 	mockHTTPClient.Dofunc = getItemByID
-	item, err := testClient.GetItemByTitle("test", uuid.New().String())
+	item, err := testClient.GetItemByTitle("test", "4eh55wjehsta5f376ggwsplxs4")
 
 	if err == nil {
 		t.Log("Expected too many items")
@@ -419,7 +421,7 @@ func Test_restClient_DeleteItemByIdError(t *testing.T) {
 
 func Test_restClient_GetFile(t *testing.T) {
 	mockHTTPClient.Dofunc = getFile
-	file, err := testClient.GetFile(uuid.New().String(), uuid.New().String(), uuid.New().String())
+	file, err := testClient.GetFile("4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
@@ -428,7 +430,7 @@ func Test_restClient_GetFile(t *testing.T) {
 func Test_restClient_GetFileNotFound(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "File not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
-	_, err := testClient.GetFile(uuid.New().String(), uuid.New().String(), uuid.New().String())
+	_, err := testClient.GetFile("4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4", "4eh55wjehsta5f376ggwsplxs4")
 
 	assert.ErrorIs(t, err, errResult)
 }
@@ -499,7 +501,7 @@ func listVaults(req *http.Request) (*http.Response, error) {
 	vaults := []onepassword.Vault{
 		{
 			Description: "Test Vault",
-			ID:          uuid.New().String(),
+			ID:          "4eh55wjehsta5f376ggwsplxs4",
 		},
 	}
 
@@ -535,11 +537,11 @@ func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
 			Label: "section",
 		}},
 		Fields: []*onepassword.ItemField{{
-			ID:    uuid.New().String(),
+			ID:    "4eh55wjehsta5f376ggwsplxs4",
 			Label: "username",
 			Value: "wendy",
 		}, {
-			ID:    uuid.New().String(),
+			ID:    "4eh55wjehsta5f376ggwsplxs4",
 			Label: "password",
 			Value: "appleseed",
 			Section: &onepassword.ItemSection{
@@ -553,7 +555,7 @@ func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
 
 func generateItem(vaultUUID string) *onepassword.Item {
 	return &onepassword.Item{
-		ID: uuid.New().String(),
+		ID: "4eh55wjehsta5f376ggwsplxs4",
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
 		},
@@ -703,7 +705,7 @@ func deleteItem(req *http.Request) (*http.Response, error) {
 
 func generateFile() *onepassword.File {
 	return &onepassword.File{
-		ID:          uuid.New().String(),
+		ID:          "4eh55wjehsta5f376ggwsplxs4",
 		Name:        "testfile.txt",
 		ContentPath: "/v1/files/xbqdtnehinocwuz23c7l7jiagy/content",
 	}
