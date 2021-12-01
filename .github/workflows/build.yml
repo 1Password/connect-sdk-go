@@ -17,7 +17,7 @@ jobs:
   build:
     name: Build
     needs: pre_job
-      if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
     - name: Set up Go 1.x
