@@ -353,7 +353,7 @@ func Test_restClient_CreateItemError(t *testing.T) {
 
 func Test_restClient_UpdateItem(t *testing.T) {
 	mockHTTPClient.Dofunc = updateItem
-	item, err := testClient.UpdateItem(generateItem(defaultVault), defaultVault)
+	item, err := testClient.UpdateItem(generateItem(defaultVault))
 
 	if err != nil {
 		t.Logf("Unable to update item: %s", err.Error())
@@ -370,7 +370,7 @@ func Test_restClient_UpdateItemError(t *testing.T) {
 	errResult := apiError(http.StatusBadRequest, "Missing required field")
 	mockHTTPClient.Dofunc = respondError(errResult)
 
-	item, err := testClient.UpdateItem(generateItem(defaultVault), defaultVault)
+	item, err := testClient.UpdateItem(generateItem(defaultVault))
 
 	assert.ErrorIs(t, err, errResult)
 	if item != nil {
@@ -381,7 +381,7 @@ func Test_restClient_UpdateItemError(t *testing.T) {
 
 func Test_restClient_DeleteItem(t *testing.T) {
 	mockHTTPClient.Dofunc = deleteItem
-	err := testClient.DeleteItem(generateItem(defaultVault), defaultVault)
+	err := testClient.DeleteItem(generateItem(defaultVault))
 
 	if err != nil {
 		t.Logf("Unable to delete item: %s", err.Error())
@@ -403,7 +403,7 @@ func Test_restClient_DeleteItemError(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "Vault not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
 
-	err := testClient.DeleteItem(generateItem(defaultVault), defaultVault)
+	err := testClient.DeleteItem(generateItem(defaultVault))
 
 	assert.ErrorIs(t, err, errResult)
 }
