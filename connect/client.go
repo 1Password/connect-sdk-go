@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -35,8 +36,8 @@ type Client interface {
 	GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error)
 	GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error)
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
-	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
-	DeleteItem(item *onepassword.Item, vaultUUID string) error
+	UpdateItem(item *onepassword.Item) (*onepassword.Item, error)
+	DeleteItem(item *onepassword.Item) error
 	DeleteItemByID(itemUUID string, vaultUUID string) error
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
@@ -135,8 +136,8 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 
 // GetVaults Get a list of all available vaults
 func (rs *restClient) GetVault(uuid string) (*onepassword.Vault, error) {
-	if uuid == "" {
-		return nil, errors.New("no uuid provided")
+	if !isValidUUID(uuid) {
+		return nil, errors.New("malformed vault uuid provided")
 	}
 
 	span := rs.tracer.StartSpan("GetVault")
@@ -186,6 +187,13 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 
 // GetItem Get a specific Item from the 1Password Connect API
 func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(uuid) {
+		return nil, errors.New("malformed item uuid provided")
+	}
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetItem")
 	defer span.Finish()
 
@@ -208,6 +216,10 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 }
 
 func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetItemByTitle")
 	defer span.Finish()
 	items, err := rs.GetItemsByTitle(title, vaultUUID)
@@ -223,6 +235,10 @@ func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepasswo
 }
 
 func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetItemsByTitle")
 	defer span.Finish()
 
@@ -247,6 +263,10 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 }
 
 func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetItems")
 	defer span.Finish()
 
@@ -271,6 +291,10 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 
 // CreateItem Create a new item in a specified vault
 func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("CreateItem")
 	defer span.Finish()
 
@@ -299,7 +323,7 @@ func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*one
 }
 
 // UpdateItem Update a new item in a specified vault
-func (rs *restClient) UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
+func (rs *restClient) UpdateItem(item *onepassword.Item) (*onepassword.Item, error) {
 	span := rs.tracer.StartSpan("UpdateItem")
 	defer span.Finish()
 
@@ -328,7 +352,7 @@ func (rs *restClient) UpdateItem(item *onepassword.Item, vaultUUID string) (*one
 }
 
 // DeleteItem Delete a new item in a specified vault
-func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error {
+func (rs *restClient) DeleteItem(item *onepassword.Item) error {
 	span := rs.tracer.StartSpan("DeleteItem")
 	defer span.Finish()
 
@@ -352,6 +376,13 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 
 // DeleteItem Delete a new item in a specified vault, specifying the item's uuid
 func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+	if !isValidUUID(itemUUID) {
+		return errors.New("malformed item uuid provided")
+	}
+	if !isValidUUID(vaultUUID) {
+		return errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("DeleteItemByID")
 	defer span.Finish()
 
@@ -374,6 +405,13 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 }
 
 func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	if !isValidUUID(itemUUID) {
+		return nil, errors.New("malformed item uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetFiles")
 	defer span.Finish()
 
@@ -400,6 +438,16 @@ func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
 func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	if !isValidUUID(uuid) {
+		return nil, errors.New("malformed file uuid provided")
+	}
+	if !isValidUUID(itemUUID) {
+		return nil, errors.New("malformed item uuid provided")
+	}
+	if !isValidUUID(vaultUUID) {
+		return nil, errors.New("malformed vault uuid provided")
+	}
+	
 	span := rs.tracer.StartSpan("GetFile")
 	defer span.Finish()
 
@@ -546,6 +594,12 @@ func loadToStruct(item *parsedItem, config reflect.Value) error {
 }
 
 func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+	if !isValidUUID(itemUUID) {
+		return errors.New("malformed item uuid provided")
+	}
+	if !isValidUUID(vaultUUID) {
+		return errors.New("malformed vault uuid provided")
+	}
 	config, err := checkStruct(i)
 	if err != nil {
 		return err
@@ -566,6 +620,10 @@ func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUU
 
 // LoadConfigFromItem Load configuration values based on struct tag from one 1P item
 func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
+	if !isValidUUID(vaultUUID) {
+		return errors.New("malformed vault uuid provided")
+	}
+	
 	config, err := checkStruct(i)
 	if err != nil {
 		return err
@@ -616,6 +674,9 @@ func (rs *restClient) LoadStruct(i interface{}) error {
 		if err != nil {
 			return err
 		}
+		if !isValidUUID(itemVault) {
+			return errors.New("malformed vault uuid provided")
+		}
 
 		key := fmt.Sprintf("%s/%s", itemVault, tag)
 		parsed := items[key]
@@ -662,4 +723,9 @@ func readResponseBody(resp *http.Response, expectedStatusCode int) ([]byte, erro
 		return nil, errResp
 	}
 	return body, nil
+}
+
+func isValidUUID(u string) bool {
+	r := regexp.MustCompile("^[a-z0-9]{26}$")
+	return r.MatchString(u)
 }
