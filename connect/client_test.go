@@ -581,7 +581,7 @@ func listItems(req *http.Request) (*http.Response, error) {
 }
 
 func getItemByID(req *http.Request) (*http.Response, error) {
-	vaultUUID := ""
+	vaultUUID := testID
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
