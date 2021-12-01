@@ -4,17 +4,14 @@ permissions:
 on: [push, pull_request]
 
 jobs:
-  pre_job:
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.1
   build:
     name: Build
-    needs: pre_job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    if: >-
+      ${{
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' &&
+      github.event.pull_request.head.repo.full_name != '1Password/connect-sdk-go')
+      }}
     runs-on: ubuntu-latest
     steps:
     - name: Set up Go 1.x
