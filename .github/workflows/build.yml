@@ -11,6 +11,8 @@ jobs:
     steps:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.1
+        with:
+          skip_after_successful_duplicate: 'true'
 
   build:
     name: Build
