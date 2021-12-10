@@ -36,8 +36,8 @@ type Client interface {
 	GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error)
 	GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error)
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
-	UpdateItem(item *onepassword.Item) (*onepassword.Item, error)
-	DeleteItem(item *onepassword.Item) error
+	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
+	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	DeleteItemByID(itemUUID string, vaultUUID string) error
 	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
@@ -323,7 +323,7 @@ func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*one
 }
 
 // UpdateItem Update a new item in a specified vault
-func (rs *restClient) UpdateItem(item *onepassword.Item) (*onepassword.Item, error) {
+func (rs *restClient) UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
 	span := rs.tracer.StartSpan("UpdateItem")
 	defer span.Finish()
 
@@ -352,7 +352,7 @@ func (rs *restClient) UpdateItem(item *onepassword.Item) (*onepassword.Item, err
 }
 
 // DeleteItem Delete a new item in a specified vault
-func (rs *restClient) DeleteItem(item *onepassword.Item) error {
+func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error {
 	span := rs.tracer.StartSpan("DeleteItem")
 	defer span.Finish()
 
