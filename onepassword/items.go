@@ -71,7 +71,7 @@ type Item struct {
 	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
 
 	// Deprecated: Connect does not return trashed items.
-	Trashed  bool      `json:"trashed,omitempty"`
+	Trashed bool `json:"trashed,omitempty"`
 }
 
 // ItemVault represents the Vault the Item is found in
@@ -108,9 +108,10 @@ type ItemField struct {
 	Generate bool             `json:"generate,omitempty"`
 	Recipe   *GeneratorRecipe `json:"recipe,omitempty"`
 	Entropy  float64          `json:"entropy,omitempty"`
+	TOTP     string           `json:"totp,omitempty"`
 }
 
-// Get Retrieve the value of a field on the item by its label. To specify a
+// GetValue Retrieve the value of a field on the item by its label. To specify a
 // field from a specific section pass in <section label>.<field label>. If
 // no field matching the selector is found return "".
 func (i *Item) GetValue(field string) string {
