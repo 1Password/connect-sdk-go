@@ -481,8 +481,8 @@ func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*
 // GetFileContent retrieves the file's content.
 // If the file's content have previously been fetched, those contents are returned without making another request.
 func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
-	if content, err := file.Content(); err == nil {
-		return content, nil
+	if file.IsFetched() {
+		return file.Content, nil
 	}
 	response, err := rs.retrieveDocumentContent(file)
 	if err != nil {
@@ -492,7 +492,7 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	file.SetContent(content)
+	file.Content = content
 	return content, nil
 }
 

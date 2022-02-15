@@ -2,7 +2,6 @@ package onepassword
 
 import (
 	"encoding/json"
-	"errors"
 )
 
 type File struct {
@@ -11,7 +10,7 @@ type File struct {
 	Section     *ItemSection `json:"section,omitempty"`
 	Size        int          `json:"size"`
 	ContentPath string       `json:"content_path"`
-	content     []byte
+	Content     []byte       `json:"content,omitempty"`
 }
 
 func (f *File) UnmarshalJSON(data []byte) error {
@@ -23,6 +22,7 @@ func (f *File) UnmarshalJSON(data []byte) error {
 		ContentPath string       `json:"content_path"`
 		Content     []byte       `json:"content,omitempty"`
 	}
+
 	if err := json.Unmarshal(data, &jsonFile); err != nil {
 		return err
 	}
@@ -31,19 +31,15 @@ func (f *File) UnmarshalJSON(data []byte) error {
 	f.Section = jsonFile.Section
 	f.Size = jsonFile.Size
 	f.ContentPath = jsonFile.ContentPath
-	f.content = jsonFile.Content
+	f.Content = jsonFile.Content
 	return nil
 }
 
-// Content returns the content of the file if they have been loaded and returns an error if they have not been loaded.
-// Use `client.GetFileContent(file *File)` instead to make sure the content is fetched automatically if not present.
-func (f *File) Content() ([]byte, error) {
-	if f.content == nil {
-		return nil, errors.New("file content not loaded")
+// IsFetched returns true if the content of the file has been loaded and false if not.
+// Use `client.GetFileContent(file *File)` to make sure the content is fetched automatically if not present.
+func (f *File) IsFetched() bool {
+	if f.Content == nil {
+		return false
 	}
-	return f.content, nil
-}
-
-func (f *File) SetContent(content []byte) {
-	f.content = content
+	return true
 }
