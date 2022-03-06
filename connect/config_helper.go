@@ -14,6 +14,7 @@ const (
 	itemTag    = "opitem"
 	sectionTag = "opsection"
 	fieldTag   = "opfield"
+	urlsTag    = "opurls"
 
 	envVaultVar = "OP_VAULT"
 )
@@ -69,12 +70,23 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 	for i, field := range parsedItem.fields {
 		value := parsedItem.values[i]
 		path := fmt.Sprintf("%s.%s", field.Tag.Get(sectionTag), field.Tag.Get(fieldTag))
-		if path == "." {
+		if path == "." && field.Tag.Get(urlsTag) == "" {
 			if field.Type == reflect.TypeOf(onepassword.Item{}) {
 				value.Set(reflect.ValueOf(*item))
 				return nil
 			}
 			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
+		}
+
+		if item.URLs != nil && field.Tag.Get(urlsTag) != "" {
+			fmt.Println(field.Type.String())
+			if field.Type == reflect.TypeOf([]onepassword.ItemURL{}) {
+				urls := &[]onepassword.ItemURL{{
+					Primary: UrlsPrimaryForName(item.URLs),
+					URL:     UrlsURLForName(item.URLs),
+				}}
+				value.Set(reflect.ValueOf(*urls))
+			}
 		}
 
 		if strings.HasSuffix(path, ".") {
@@ -103,9 +115,34 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 				break
 			}
 		}
+
 	}
 
 	return nil
+}
+
+func UrlsPrimaryForName(ItemURL []onepassword.ItemURL) bool {
+	if ItemURL == nil {
+		return false
+	}
+
+	for _, s := range ItemURL {
+		return s.Primary
+	}
+
+	return false
+}
+
+func UrlsURLForName(ItemURL []onepassword.ItemURL) string {
+	if ItemURL == nil {
+		return ""
+	}
+
+	for _, s := range ItemURL {
+		return s.URL
+	}
+
+	return ""
 }
 
 func setValue(value *reflect.Value, toSet string) error {

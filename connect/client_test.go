@@ -459,6 +459,7 @@ func Test_restClient_loadStructFromItem(t *testing.T) {
 	type testConfig struct {
 		Username string                  `opfield:"username"`
 		Password string                  `opsection:"section" opfield:"password"`
+		URLs     []onepassword.ItemURL   `opurls:"urls"`
 		Section  onepassword.ItemSection `opsection:"section"`
 	}
 	mockHTTPClient.Dofunc = getComplexItem
@@ -476,6 +477,10 @@ func Test_restClient_loadStructFromItem(t *testing.T) {
 
 	assert.Equal(t, "wendy", c.Username)
 	assert.Equal(t, "appleseed", c.Password)
+	assert.Equal(t, onepassword.ItemURL{
+		Primary: true,
+		URL:     "https://www.wendy.com",
+	}, c.URLs[0])
 	assert.Equal(t, onepassword.ItemSection{
 		ID:    "",
 		Label: "section",
@@ -532,6 +537,10 @@ func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
 		},
+		URLs: []onepassword.ItemURL{{
+			Primary: true,
+			URL:     "https://www.wendy.com",
+		}},
 		Sections: []*onepassword.ItemSection{{
 			ID:    "",
 			Label: "section",
