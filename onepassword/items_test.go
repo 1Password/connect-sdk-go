@@ -9,6 +9,7 @@ import (
 var testUsernmae = "user123"
 var testPassword = "Password2!"
 var testOther = "Test Value"
+var testTOTP = "154626"
 
 func TestItemGetValuePassword(t *testing.T) {
 	login := testLogin()
@@ -49,6 +50,19 @@ func TestItemGetValueMissingField(t *testing.T) {
 	if value != "" {
 		t.Logf("Expected other value %q, found %q", "", value)
 		t.FailNow()
+	}
+}
+
+func TestItemGetTOTP(t *testing.T) {
+	login := testLogin()
+
+	for _, field := range login.Fields {
+		if field.Type == "OTP" {
+			if field.TOTP != "154626" {
+				t.Logf("Expected other value %q, found %q", testTOTP, field.TOTP)
+				t.FailNow()
+			}
+		}
 	}
 }
 
@@ -93,6 +107,13 @@ func testLogin() *Item {
 				Type:  "STRING",
 				Label: "other",
 				Value: testOther,
+			},
+			{
+				ID:    "TOTP_c624e90aae964fdaa829517c24",
+				Type:  "OTP",
+				Label: "one-time password",
+				Value: "otpauth://totp/testop?secret=totpcode",
+				TOTP:  "154626",
 			},
 		},
 	}
