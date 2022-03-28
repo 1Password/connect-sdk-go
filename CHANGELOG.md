@@ -1,23 +1,48 @@
-[//]: # (START/LATEST)
+[//]: # "START/LATEST"
+
 # Latest
 
 ## Features
-  * A user-friendly description of a new feature. {issue-number}
+
+- A user-friendly description of a new feature. {issue-number}
 
 ## Fixes
- * A user-friendly description of a fix. {issue-number}
+
+- A user-friendly description of a fix. {issue-number}
 
 ## Security
- * A user-friendly description of a security fix. {issue-number}
+
+- A user-friendly description of a security fix. {issue-number}
 
 ---
 
-[//]: # (START/v1.2.0)
+[//]: # "START/v1.3.0"
+
+# v1.3.0
+
+## Features
+
+- Added the ability to get the TOTP value for an item. {44}
+- Added method to retrieve a list of files for an item {39}
+- Added method to download a file {39}
+- Added the ability to create tags for sections when loading a struct {37}
+- Added method for deleting an item by id {33}
+- Added item state field and deprecated trashed field {30}
+
+## Fixes
+
+- Added UUID validation {41}
+
+---
+
+[//]: # "START/v1.2.0"
+
 # v1.2.0
 
 ## Features
- * Files stored as attachments or as fields can now be retrieved (requires Connect `v1.3.0` or later).
- * Details of Connect API errors can now be inspected by unwrapping a returned error into a `onepassword.Error` struct. {#17}
+
+- Files stored as attachments or as fields can now be retrieved (requires Connect `v1.3.0` or later).
+- Details of Connect API errors can now be inspected by unwrapping a returned error into a `onepassword.Error` struct. {#17}
 
 ---
 
