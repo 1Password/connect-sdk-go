@@ -12,6 +12,7 @@ type ItemCategory string
 const (
 	Login                ItemCategory = "LOGIN"
 	Password             ItemCategory = "PASSWORD"
+	ApiCredential        ItemCategory = "API_CREDENTIAL"
 	Server               ItemCategory = "SERVER"
 	Database             ItemCategory = "DATABASE"
 	CreditCard           ItemCategory = "CREDIT_CARD"
@@ -28,7 +29,8 @@ const (
 	Document             ItemCategory = "DOCUMENT"
 	EmailAccount         ItemCategory = "EMAIL_ACCOUNT"
 	SocialSecurityNumber ItemCategory = "SOCIAL_SECURITY_NUMBER"
-	ApiCredential        ItemCategory = "API_CREDENTIAL"
+	MedicalRecord        ItemCategory = "MEDICAL_RECORD"
+	SSHKey               ItemCategory = "SSH_KEY"
 	Custom               ItemCategory = "CUSTOM"
 )
 
@@ -40,7 +42,7 @@ func (ic *ItemCategory) UnmarshalJSON(b []byte) error {
 	switch category {
 	case Login, Password, Server, Database, CreditCard, Membership, Passport, SoftwareLicense,
 		OutdoorLicense, SecureNote, WirelessRouter, BankAccount, DriverLicense, Identity, RewardProgram,
-		Document, EmailAccount, SocialSecurityNumber, ApiCredential:
+		Document, EmailAccount, SocialSecurityNumber, ApiCredential, MedicalRecord, SSHKey:
 		*ic = category
 	default:
 		*ic = Custom
