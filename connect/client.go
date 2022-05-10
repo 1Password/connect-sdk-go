@@ -264,12 +264,12 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 		return nil, err
 	}
 
-	for _, item := range items {
+	for i, item := range items {
 		tempItem, err := rs.GetItem(item.ID, item.Vault.ID)
 		if err != nil {
 			return nil, err
 		}
-		item = *tempItem
+		items[i] = *tempItem
 	}
 
 	return items, nil
