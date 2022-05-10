@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/assert"
 
@@ -31,6 +30,9 @@ var requestFail bool
 var testUserAgent string
 
 var testServerDefaultVersion = version{1, 3, 0}
+
+const testItemUUID = "2a47aa139ef74d7ca17918035e"
+const testVaultUUID = "5b52aa139ef74d7ca17918nmf8"
 
 type mockClient struct {
 	Dofunc func(req *http.Request) (*http.Response, error)
@@ -279,7 +281,8 @@ func Test_restClient_GetItems(t *testing.T) {
 
 func generateComplexItem(vaultUUID string) onepassword.Item {
 	return onepassword.Item{
-		Title: "test",
+		Title: "test-item",
+		ID: testItemUUID,
 		Vault: onepassword.ItemVault{ID: vaultUUID},
 		Sections: []*onepassword.ItemSection{{
 			ID:    "",
@@ -297,7 +300,7 @@ func generateComplexItem(vaultUUID string) onepassword.Item {
 
 func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
 	if strings.Contains(req.URL.RequestURI(), "test-item") {
-		json, _ := json.Marshal([]onepassword.Item{generateComplexItem("")})
+		json, _ := json.Marshal([]onepassword.Item{generateComplexItem(testVaultUUID)})
 		return &http.Response{
 			Status:     http.StatusText(http.StatusOK),
 			StatusCode: http.StatusOK,
@@ -305,7 +308,7 @@ func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
 			Header:     req.Header,
 		}, nil
 	} else {
-		json, _ := json.Marshal(generateComplexItem(""))
+		json, _ := json.Marshal(generateComplexItem(testVaultUUID))
 		return &http.Response{
 			Status:     http.StatusText(http.StatusOK),
 			StatusCode: http.StatusOK,
@@ -317,7 +320,7 @@ func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
 
 func Test_restClient_GetItemsByTitle(t *testing.T) {
 	mockHTTPClient.Dofunc = listItemsOrGetItem
-	items, err := testClient.GetItemsByTitle("test-item", "")
+	items, err := testClient.GetItemsByTitle("test-item", testVaultUUID)
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -435,6 +438,7 @@ func Test_restClient_DeleteItem(t *testing.T) {
 
 func Test_restClient_DeleteItemById(t *testing.T) {
 	mockHTTPClient.Dofunc = deleteItem
+	fmt.Printf(generateItem(defaultVault).ID)
 	err := testClient.DeleteItemByID(generateItem(defaultVault).ID, defaultVault)
 
 	if err != nil {
@@ -570,7 +574,7 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 
 func generateItem(vaultUUID string) *onepassword.Item {
 	return &onepassword.Item{
-		ID:    uuid.New().String(),
+		ID:    strings.ToLower(testItemUUID),
 		Title: "test-item",
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
@@ -624,7 +628,7 @@ func getItemByID(req *http.Request) (*http.Response, error) {
 }
 
 func getComplexItem(req *http.Request) (*http.Response, error) {
-	vaultUUID := ""
+	vaultUUID := testVaultUUID
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
@@ -662,8 +666,7 @@ func createItem(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	newUUID := uuid.New()
-	item.ID = newUUID.String()
+	item.ID = testItemUUID
 	item.CreatedAt = time.Now()
 
 	vaultUUID := ""
@@ -706,8 +709,8 @@ func updateItem(req *http.Request) (*http.Response, error) {
 }
 
 func deleteItem(req *http.Request) (*http.Response, error) {
-	vaultUUID := ""
-	itemUUID := ""
+	vaultUUID := strings.ToLower(testVaultUUID)
+	itemUUID := strings.ToLower(testItemUUID)
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
 
 	return &http.Response{
