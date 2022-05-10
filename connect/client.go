@@ -3,14 +3,15 @@ package connect
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
+	"regexp"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -22,6 +23,12 @@ import (
 
 const (
 	defaultUserAgent = "connect-sdk-go/%s"
+)
+
+var (
+	vaultUUIDError = fmt.Errorf("malformed vault uuid provided")
+	itemUUIDError  = fmt.Errorf("malformed item uuid provided")
+	fileUUIDError  = fmt.Errorf("malformed file uuid provided")
 )
 
 // Client Represents an available 1Password Connect API to connect to
@@ -37,8 +44,10 @@ type Client interface {
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
 	DeleteItemByID(itemUUID string, vaultUUID string) error
+	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
 	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
+	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
 	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
 	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
 	LoadStruct(config interface{}) error
@@ -132,8 +141,8 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 
 // GetVaults Get a list of all available vaults
 func (rs *restClient) GetVault(uuid string) (*onepassword.Vault, error) {
-	if uuid == "" {
-		return nil, errors.New("no uuid provided")
+	if !isValidUUID(uuid) {
+		return nil, vaultUUIDError
 	}
 
 	span := rs.tracer.StartSpan("GetVault")
@@ -183,6 +192,13 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 
 // GetItem Get a specific Item from the 1Password Connect API
 func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(uuid) {
+		return nil, itemUUIDError
+	}
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("GetItem")
 	defer span.Finish()
 
@@ -205,6 +221,10 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 }
 
 func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("GetItemByTitle")
 	defer span.Finish()
 	items, err := rs.GetItemsByTitle(title, vaultUUID)
@@ -220,6 +240,10 @@ func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepasswo
 }
 
 func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("GetItemsByTitle")
 	defer span.Finish()
 
@@ -252,6 +276,10 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 }
 
 func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("GetItems")
 	defer span.Finish()
 
@@ -276,6 +304,10 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 
 // CreateItem Create a new item in a specified vault
 func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("CreateItem")
 	defer span.Finish()
 
@@ -357,6 +389,13 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 
 // DeleteItem Delete a new item in a specified vault, specifying the item's uuid
 func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+	if !isValidUUID(itemUUID) {
+		return itemUUIDError
+	}
+	if !isValidUUID(vaultUUID) {
+		return vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("DeleteItemByID")
 	defer span.Finish()
 
@@ -378,9 +417,50 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 	return nil
 }
 
+func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+	if !isValidUUID(itemUUID) {
+		return nil, itemUUIDError
+	}
+
+	span := rs.tracer.StartSpan("GetFiles")
+	defer span.Finish()
+
+	jsonURL := fmt.Sprintf("/v1/vaults/%s/items/%s/files", vaultUUID, itemUUID)
+	request, err := rs.buildRequest(http.MethodGet, jsonURL, http.NoBody, span)
+	if err != nil {
+		return nil, err
+	}
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
+		return nil, err
+	}
+	var files []onepassword.File
+	if err := parseResponse(response, http.StatusOK, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
 func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+	if !isValidUUID(uuid) {
+		return nil, fileUUIDError
+	}
+	if !isValidUUID(itemUUID) {
+		return nil, itemUUIDError
+	}
+	if !isValidUUID(vaultUUID) {
+		return nil, vaultUUIDError
+	}
+
 	span := rs.tracer.StartSpan("GetFile")
 	defer span.Finish()
 
@@ -412,7 +492,53 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if content, err := file.Content(); err == nil {
 		return content, nil
 	}
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return nil, err
+	}
+	content, err := readResponseBody(response, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	file.SetContent(content)
+	return content, nil
+}
 
+func (rs *restClient) DownloadFile(file *onepassword.File, targetDirectory string, overwriteIfExists bool) (string, error) {
+	response, err := rs.retrieveDocumentContent(file)
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(targetDirectory, filepath.Base(file.Name))
+
+	var osFile *os.File
+
+	if overwriteIfExists {
+		osFile, err = createFile(path)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			osFile, err = createFile(path)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", fmt.Errorf("a file already exists under the %s path. In order to overwrite it, set `overwriteIfExists` to true", path)
+		}
+	}
+	defer osFile.Close()
+	if _, err = io.Copy(osFile, response.Body); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
+func (rs *restClient) retrieveDocumentContent(file *onepassword.File) (*http.Response, error) {
 	span := rs.tracer.StartSpan("GetFileContent")
 	defer span.Finish()
 
@@ -428,14 +554,19 @@ func (rs *restClient) GetFileContent(file *onepassword.File) ([]byte, error) {
 	if err := expectMinimumConnectVersion(response, version{1, 3, 0}); err != nil {
 		return nil, err
 	}
+	return response, nil
+}
 
-	content, err := readResponseBody(response, http.StatusOK)
+func createFile(path string) (*os.File, error) {
+	osFile, err := os.Create(path)
 	if err != nil {
 		return nil, err
 	}
-
-	file.SetContent(content)
-	return content, nil
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return osFile, nil
 }
 
 func (rs *restClient) buildRequest(method string, path string, body io.Reader, span opentracing.Span) (*http.Request, error) {
@@ -476,6 +607,12 @@ func loadToStruct(item *parsedItem, config reflect.Value) error {
 }
 
 func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+	if !isValidUUID(itemUUID) {
+		return itemUUIDError
+	}
+	if !isValidUUID(vaultUUID) {
+		return vaultUUIDError
+	}
 	config, err := checkStruct(i)
 	if err != nil {
 		return err
@@ -496,6 +633,10 @@ func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUU
 
 // LoadConfigFromItem Load configuration values based on struct tag from one 1P item
 func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
+	if !isValidUUID(vaultUUID) {
+		return vaultUUIDError
+	}
+
 	config, err := checkStruct(i)
 	if err != nil {
 		return err
@@ -546,6 +687,9 @@ func (rs *restClient) LoadStruct(i interface{}) error {
 		if err != nil {
 			return err
 		}
+		if !isValidUUID(itemVault) {
+			return vaultUUIDError
+		}
 
 		key := fmt.Sprintf("%s/%s", itemVault, tag)
 		parsed := items[key]
@@ -592,4 +736,9 @@ func readResponseBody(resp *http.Response, expectedStatusCode int) ([]byte, erro
 		return nil, errResp
 	}
 	return body, nil
+}
+
+func isValidUUID(u string) bool {
+	r := regexp.MustCompile("^[a-z0-9]{26}$")
+	return r.MatchString(u)
 }
