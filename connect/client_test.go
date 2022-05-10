@@ -279,45 +279,6 @@ func Test_restClient_GetItems(t *testing.T) {
 	}
 }
 
-func generateComplexItem(vaultUUID string) onepassword.Item {
-	return onepassword.Item{
-		Title: "test-item",
-		ID: testItemUUID,
-		Vault: onepassword.ItemVault{ID: vaultUUID},
-		Sections: []*onepassword.ItemSection{{
-			ID:    "",
-			Label: "section",
-		}},
-		Fields: []*onepassword.ItemField{
-			{Label: "username", Value: "wendy"},
-			{Label: "password", Value: "appleseed", Section: &onepassword.ItemSection{
-				ID:    "",
-				Label: "section",
-			}},
-		},
-	}
-}
-
-func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
-	if strings.Contains(req.URL.RequestURI(), "test-item") {
-		json, _ := json.Marshal([]onepassword.Item{generateComplexItem(testVaultUUID)})
-		return &http.Response{
-			Status:     http.StatusText(http.StatusOK),
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	} else {
-		json, _ := json.Marshal(generateComplexItem(testVaultUUID))
-		return &http.Response{
-			Status:     http.StatusText(http.StatusOK),
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader(json)),
-			Header:     req.Header,
-		}, nil
-	}
-}
-
 func Test_restClient_GetItemsByTitle(t *testing.T) {
 	mockHTTPClient.Dofunc = listItemsOrGetItem
 	items, err := testClient.GetItemsByTitle("test-item", testVaultUUID)
@@ -334,6 +295,8 @@ func Test_restClient_GetItemsByTitle(t *testing.T) {
 
 	assert.Equal(t, items[0].Title, "test-item")
 	assert.NotEqual(t, len(items[0].Fields), 0)
+	assert.Equal(t, items[0].Fields[0].Value, "wendy")
+	assert.Equal(t, items[0].Fields[1].Value, "appleseed")
 }
 
 func Test_restClient_GetItemByTitle(t *testing.T) {
@@ -351,6 +314,10 @@ func Test_restClient_GetItemByTitle(t *testing.T) {
 		t.Log("Expected 1 item to exist")
 		t.FailNow()
 	}
+
+	assert.Equal(t, item.Fields[0].Value, "wendy")
+	assert.Equal(t, item.Fields[1].Value, "appleseed")
+
 }
 
 func Test_restClient_GetItemByNonUniqueTitle(t *testing.T) {
@@ -438,7 +405,6 @@ func Test_restClient_DeleteItem(t *testing.T) {
 
 func Test_restClient_DeleteItemById(t *testing.T) {
 	mockHTTPClient.Dofunc = deleteItem
-	fmt.Printf(generateItem(defaultVault).ID)
 	err := testClient.DeleteItemByID(generateItem(defaultVault).ID, defaultVault)
 
 	if err != nil {
@@ -572,13 +538,57 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 	}
 }
 
-func generateItem(vaultUUID string) *onepassword.Item {
-	return &onepassword.Item{
-		ID:    strings.ToLower(testItemUUID),
+func generateComplexItem(vaultUUID string) onepassword.Item {
+	return onepassword.Item{
 		Title: "test-item",
+		ID:    testItemUUID,
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
 		},
+		Sections: []*onepassword.ItemSection{{
+			ID:    "",
+			Label: "section",
+		}},
+		Fields: []*onepassword.ItemField{
+			{
+				ID:    testID,
+				Label: "username",
+				Value: "wendy",
+			},
+			{
+				Label: "password",
+				Value: "appleseed",
+				Section: &onepassword.ItemSection{
+					ID:    "",
+					Label: "section",
+				},
+			},
+		},
+	}
+}
+
+func generateItem(vaultUUID string) *onepassword.Item {
+	item := generateComplexItem(vaultUUID)
+	return &item
+}
+
+func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
+	if strings.Contains(req.URL.RequestURI(), "test-item") {
+		json, _ := json.Marshal([]onepassword.Item{generateComplexItem(testVaultUUID)})
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
+	} else {
+		json, _ := json.Marshal(generateComplexItem(testVaultUUID))
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
 	}
 }
 
