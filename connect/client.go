@@ -739,7 +739,6 @@ func readResponseBody(resp *http.Response, expectedStatusCode int) ([]byte, erro
 }
 
 func isValidUUID(u string) bool {
-	fmt.Println(u)
 	r := regexp.MustCompile("^[a-z0-9]{26}$")
 	return r.MatchString(u)
 }
