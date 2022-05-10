@@ -259,13 +259,14 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 		return nil, err
 	}
 
-	var items []onepassword.Item
-	if err := parseResponse(response, http.StatusOK, &items); err != nil {
+	var itemSummaries []onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &itemSummaries); err != nil {
 		return nil, err
 	}
 
-	for i, item := range items {
-		tempItem, err := rs.GetItem(item.ID, item.Vault.ID)
+	items := make([]onepassword.Item, len(itemSummaries))
+	for i, itemSummary := range itemSummaries {
+		tempItem, err := rs.GetItem(itemSummary.ID, itemSummary.Vault.ID)
 		if err != nil {
 			return nil, err
 		}
