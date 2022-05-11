@@ -84,6 +84,7 @@ type ItemVault struct {
 // ItemURL is a simplified item URL
 type ItemURL struct {
 	Primary bool   `json:"primary,omitempty"`
+	Label   string `json:"label,omitempty"`
 	URL     string `json:"href"`
 }
 
