@@ -35,6 +35,7 @@ var (
 type Client interface {
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
+	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
 	GetVaultsByTitle(uuid string) ([]onepassword.Vault, error)
 	GetItem(uuid string, vaultUUID string) (*onepassword.Item, error)
 	GetItems(vaultUUID string) ([]onepassword.Item, error)
@@ -155,7 +156,7 @@ func (rs *restClient) GetVaultByUUID(uuid string) (*onepassword.Vault, error) {
 		return nil, vaultUUIDError
 	}
 
-	span := rs.tracer.StartSpan("GetVault")
+	span := rs.tracer.StartSpan("GetVaultByUUID")
 	defer span.Finish()
 
 	vaultURL := fmt.Sprintf("/v1/vaults/%s", uuid)
