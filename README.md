@@ -9,7 +9,6 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 <details>
   <summary>Table of Contents</summary>
 
-  - [1Password Connect Go SDK](#1password-connect-go-sdk)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
   * [Usage](#usage)
@@ -49,7 +48,7 @@ go get github.com/1Password/connect-sdk-go
 To import the 1Password Connect SDK in your Go project:
 ```go
 import (
-    	"github.com/1Password/connect-sdk-go/connect"
+    "github.com/1Password/connect-sdk-go/connect"
 	"github.com/1Password/connect-sdk-go/onepassword"
 )
 ```
@@ -76,19 +75,19 @@ func main () {
 Writing a secret:
 ```go
 import (
-    	"github.com/1Password/connect-sdk-go/connect"
+    "github.com/1Password/connect-sdk-go/connect"
 	"github.com/1Password/connect-sdk-go/onepassword"
 )
 
 func main () {
 	client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
 	item := &onepassword.Item{
+		Title:    "Secret String",
+		Category: onepassword.Login,
 		Fields: []*onepassword.ItemField{{
 			Value: "mysecret",
-			Type: "STRING",
+			Type:  "STRING",
 		}},
-		Category: onepassword.Login,
-		Title:    "Secret String",
 	}
 
 	postedItem, err := client.CreateItem(item, "<vault-uuid>")
@@ -156,6 +155,7 @@ The `connect.Client` supports methods for:
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving a vault:
 ```go
 	vault, err := client.GetVault("vault-uuid")
@@ -163,6 +163,7 @@ The `connect.Client` supports methods for:
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving all items in a vault
 ```go
 	items, err := client.GetItems("vault-uuid")
@@ -170,6 +171,7 @@ The `connect.Client` supports methods for:
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving an item by title
 To retrieve all items in a vault with a given title:
 ```go
@@ -178,6 +180,7 @@ To retrieve all items in a vault with a given title:
 		log.Fatal(err)
 	}
 ```
+
 In case the item title is unique for a vault, another function is available as well, returning only one item, instead of a slice:
 ```go
 	item, err := client.GetItemByTitle("item-title", "vault-uuid")
@@ -185,6 +188,7 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving items by vault UUID and item UUID
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
@@ -192,16 +196,17 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Creating an item in a vault
 ```go
 	item := &onepassword.Item{
+		Title:    "Secret String",
+		Category: onepassword.Login,
+		Tags:     []string{"1password-connect"},
 		Fields: []*onepassword.ItemField{{
 			Value: "mysecret",
 			Type: "STRING",
 		}},
-		Tags:     []string{"1password-connect"},
-		Category: onepassword.Login,
-		Title:    "Secret String",
 	}
 
 	postedItem, err := client.CreateItem(item, "vault-uuid")
@@ -209,26 +214,31 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Updating an item
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	item.Title = "new title"
 	client.UpdateItem(item, "vault-uuid")
 ```
+
 #### Deleting an item
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = client.DeleteItem(item, "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
+
 #### Deleting an item by UUID
 ```go
 	err := client.DeleteItemByID("item-uuid", "vault-uuid")
@@ -236,6 +246,7 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving a file from an item
 ```go
 	file, err := client.GetFile("<file-uuid>", "item-uuid", "vault-uuid")
@@ -243,17 +254,20 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving the contents of a file from an item
 ```go
 	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	content, err := client.GetFileContent(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 ```
+
 #### Retrieving all files under an item
 ```go
 	files, err := client.GetFiles("item-uuid", "vault-uuid")
@@ -261,12 +275,14 @@ In case the item title is unique for a vault, another function is available as w
 		log.Fatal(err)
 	}
 ```
+
 #### Downloading a file
 ```go	
 	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	path, err := client.DownloadFile(file, "local/path/to/file", true)
 	if err != nil {
 		log.Fatal(err)
@@ -301,7 +317,7 @@ import (
 type Config struct {
 	Username string           `opitem:"Demo TF Database" opfield:"username"`
 	Password string           `opitem:"Demo TF Database" opfield:"password"`
-        Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"hostname"`
+    Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"hostname"`
 	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
