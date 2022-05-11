@@ -203,12 +203,40 @@ func Test_restClient_GetVault(t *testing.T) {
 	assert.Equal(t, expectedVault, vault, "retrieved vault is not as expected")
 }
 
-func Test_restClient_GetVaultEmptyUUID(t *testing.T) {
+func Test_restClient_GetVaultByID(t *testing.T) {
+	expectedVault := &onepassword.Vault{
+		Name:        "Test vault",
+		Description: "Test Vault description",
+		ID:          testID,
+	}
+
+	mockHTTPClient.Dofunc = getVault(expectedVault)
+	vault, err := testClient.GetVaultByUUID(expectedVault.ID)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedVault, vault, "retrieved vault is not as expected")
+}
+
+func Test_restClient_GetVaultByTitle(t *testing.T) {
+	expectedVault := &onepassword.Vault{
+		Name:        "Test vault",
+		Description: "Test Vault description",
+		ID:          testID,
+	}
+
+	mockHTTPClient.Dofunc = listVaults
+	vault, err := testClient.GetVaultByTitle(expectedVault.Name)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedVault, vault, "retrieved vault is not as expected")
+}
+
+func Test_restClient_GetVaultEmptyQuery(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "Vault not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
 	_, err := testClient.GetVault("")
 
-	assert.EqualError(t, err, "malformed vault uuid provided")
+	assert.EqualError(t, err, "Please provide either the vault name or its ID.")
 }
 
 func Test_restClient_GetVaultError(t *testing.T) {
@@ -500,7 +528,8 @@ func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Resp
 func listVaults(req *http.Request) (*http.Response, error) {
 	vaults := []onepassword.Vault{
 		{
-			Description: "Test Vault",
+			Name:        "Test vault",
+			Description: "Test Vault description",
 			ID:          testID,
 		},
 	}
