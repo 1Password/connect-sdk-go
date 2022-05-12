@@ -35,6 +35,7 @@ var (
 type Client interface {
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
+	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
 	GetVaultsByTitle(uuid string) ([]onepassword.Vault, error)
 	GetItem(uuid string, vaultUUID string) (*onepassword.Item, error)
 	GetItems(vaultUUID string) ([]onepassword.Item, error)
@@ -139,13 +140,23 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 	return vaults, nil
 }
 
-// GetVaults Get a list of all available vaults
-func (rs *restClient) GetVault(uuid string) (*onepassword.Vault, error) {
+// GetVault Get a vault based on its name or ID
+func (rs *restClient) GetVault(vaultQuery string) (*onepassword.Vault, error) {
+	if vaultQuery == "" {
+		return nil, fmt.Errorf("Please provide either the vault name or its ID.")
+	}
+	if !isValidUUID(vaultQuery) {
+		return rs.GetVaultByTitle(vaultQuery)
+	}
+	return rs.GetVaultByUUID(vaultQuery)
+}
+
+func (rs *restClient) GetVaultByUUID(uuid string) (*onepassword.Vault, error) {
 	if !isValidUUID(uuid) {
 		return nil, vaultUUIDError
 	}
 
-	span := rs.tracer.StartSpan("GetVault")
+	span := rs.tracer.StartSpan("GetVaultByUUID")
 	defer span.Finish()
 
 	vaultURL := fmt.Sprintf("/v1/vaults/%s", uuid)
@@ -164,6 +175,22 @@ func (rs *restClient) GetVault(uuid string) (*onepassword.Vault, error) {
 	}
 
 	return &vault, nil
+}
+
+func (rs *restClient) GetVaultByTitle(vaultName string) (*onepassword.Vault, error) {
+	span := rs.tracer.StartSpan("GetVaultByTitle")
+	defer span.Finish()
+
+	vaults, err := rs.GetVaultsByTitle(vaultName)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(vaults) != 1 {
+		return nil, fmt.Errorf("Found %d vaults with title %q", len(vaults), vaultName)
+	}
+
+	return &vaults[0], nil
 }
 
 func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error) {
