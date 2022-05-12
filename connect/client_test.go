@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/assert"
 
@@ -30,6 +30,9 @@ var requestFail bool
 var testUserAgent string
 
 var testServerDefaultVersion = version{1, 3, 0}
+
+const testItemUUID = "2a47aa139ef74d7ca17918035e"
+const testVaultUUID = "5b52aa139ef74d7ca17918nmf8"
 
 type mockClient struct {
 	Dofunc func(req *http.Request) (*http.Response, error)
@@ -277,8 +280,8 @@ func Test_restClient_GetItems(t *testing.T) {
 }
 
 func Test_restClient_GetItemsByTitle(t *testing.T) {
-	mockHTTPClient.Dofunc = listItems
-	items, err := testClient.GetItemsByTitle("test", testID)
+	mockHTTPClient.Dofunc = listItemsOrGetItem
+	items, err := testClient.GetItemsByTitle("test-item", testVaultUUID)
 
 	if err != nil {
 		t.Logf("Unable to get item: %s", err.Error())
@@ -289,6 +292,11 @@ func Test_restClient_GetItemsByTitle(t *testing.T) {
 		t.Logf("Expected 1 item to exist in vault, found %d", len(items))
 		t.FailNow()
 	}
+
+	assert.Equal(t, items[0].Title, "test-item")
+	assert.NotEqual(t, len(items[0].Fields), 0)
+	assert.Equal(t, items[0].Fields[0].Value, "wendy")
+	assert.Equal(t, items[0].Fields[1].Value, "appleseed")
 }
 
 func Test_restClient_GetItemByTitle(t *testing.T) {
@@ -306,6 +314,10 @@ func Test_restClient_GetItemByTitle(t *testing.T) {
 		t.Log("Expected 1 item to exist")
 		t.FailNow()
 	}
+
+	assert.Equal(t, item.Fields[0].Value, "wendy")
+	assert.Equal(t, item.Fields[1].Value, "appleseed")
+
 }
 
 func Test_restClient_GetItemByNonUniqueTitle(t *testing.T) {
@@ -526,9 +538,10 @@ func getVault(vault *onepassword.Vault) func(req *http.Request) (*http.Response,
 	}
 }
 
-func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
-	return &onepassword.Item{
-		ID: itemUUID,
+func generateComplexItem(vaultUUID string) onepassword.Item {
+	return onepassword.Item{
+		Title: "test-item",
+		ID:    testItemUUID,
 		Vault: onepassword.ItemVault{
 			ID: vaultUUID,
 		},
@@ -536,29 +549,46 @@ func generateComplexItem(vaultUUID string, itemUUID string) *onepassword.Item {
 			ID:    "",
 			Label: "section",
 		}},
-		Fields: []*onepassword.ItemField{{
-			ID:    testID,
-			Label: "username",
-			Value: "wendy",
-		}, {
-			ID:    testID,
-			Label: "password",
-			Value: "appleseed",
-			Section: &onepassword.ItemSection{
-				ID:    "",
-				Label: "section",
+		Fields: []*onepassword.ItemField{
+			{
+				ID:    testID,
+				Label: "username",
+				Value: "wendy",
 			},
-		},
+			{
+				Label: "password",
+				Value: "appleseed",
+				Section: &onepassword.ItemSection{
+					ID:    "",
+					Label: "section",
+				},
+			},
 		},
 	}
 }
 
 func generateItem(vaultUUID string) *onepassword.Item {
-	return &onepassword.Item{
-		ID: testID,
-		Vault: onepassword.ItemVault{
-			ID: vaultUUID,
-		},
+	item := generateComplexItem(vaultUUID)
+	return &item
+}
+
+func listItemsOrGetItem(req *http.Request) (*http.Response, error) {
+	if strings.Contains(req.URL.RequestURI(), "test-item") {
+		json, _ := json.Marshal([]onepassword.Item{generateComplexItem(testVaultUUID)})
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
+	} else {
+		json, _ := json.Marshal(generateComplexItem(testVaultUUID))
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(json)),
+			Header:     req.Header,
+		}, nil
 	}
 }
 
@@ -608,12 +638,11 @@ func getItemByID(req *http.Request) (*http.Response, error) {
 }
 
 func getComplexItem(req *http.Request) (*http.Response, error) {
-	vaultUUID := ""
-	itemUUID := ""
+	vaultUUID := testVaultUUID
 	excessPath := ""
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s%s", vaultUUID, excessPath)
 
-	json, _ := json.Marshal(generateComplexItem(vaultUUID, itemUUID))
+	json, _ := json.Marshal(generateComplexItem(vaultUUID))
 	return &http.Response{
 		Status:     http.StatusText(http.StatusOK),
 		StatusCode: http.StatusOK,
@@ -647,8 +676,7 @@ func createItem(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	newUUID := uuid.New()
-	item.ID = newUUID.String()
+	item.ID = testItemUUID
 	item.CreatedAt = time.Now()
 
 	vaultUUID := ""
@@ -691,8 +719,8 @@ func updateItem(req *http.Request) (*http.Response, error) {
 }
 
 func deleteItem(req *http.Request) (*http.Response, error) {
-	vaultUUID := ""
-	itemUUID := ""
+	vaultUUID := strings.ToLower(testVaultUUID)
+	itemUUID := strings.ToLower(testItemUUID)
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
 
 	return &http.Response{

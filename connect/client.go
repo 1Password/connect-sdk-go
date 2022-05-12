@@ -236,7 +236,7 @@ func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepasswo
 		return nil, fmt.Errorf("Found %d item(s) in vault %q with title %q", len(items), vaultUUID, title)
 	}
 
-	return rs.GetItem(items[0].ID, items[0].Vault.ID)
+	return &items[0], nil
 }
 
 func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error) {
@@ -259,9 +259,18 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 		return nil, err
 	}
 
-	var items []onepassword.Item
-	if err := parseResponse(response, http.StatusOK, &items); err != nil {
+	var itemSummaries []onepassword.Item
+	if err := parseResponse(response, http.StatusOK, &itemSummaries); err != nil {
 		return nil, err
+	}
+
+	items := make([]onepassword.Item, len(itemSummaries))
+	for i, itemSummary := range itemSummaries {
+		tempItem, err := rs.GetItem(itemSummary.ID, itemSummary.Vault.ID)
+		if err != nil {
+			return nil, err
+		}
+		items[i] = *tempItem
 	}
 
 	return items, nil
