@@ -280,6 +280,21 @@ func Test_restClient_GetItem(t *testing.T) {
 	}
 }
 
+func Test_restClient_GetItemByUUID(t *testing.T) {
+	mockHTTPClient.Dofunc = getItem
+	item, err := testClient.GetItemByUUID(testID, testID)
+
+	if err != nil {
+		t.Logf("Unable to get items: %s", err.Error())
+		t.FailNow()
+	}
+
+	if item == nil {
+		t.Log("Expected 1 item to exist")
+		t.FailNow()
+	}
+}
+
 func Test_restClient_GetItemNotFound(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "item not found")
 	mockHTTPClient.Dofunc = respondError(errResult)

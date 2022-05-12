@@ -36,11 +36,13 @@ type Client interface {
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
+	GetVaultByTitle(title string) (*onepassword.Vault, error)
 	GetVaultsByTitle(uuid string) ([]onepassword.Vault, error)
-	GetItem(uuid string, vaultUUID string) (*onepassword.Item, error)
 	GetItems(vaultUUID string) ([]onepassword.Item, error)
-	GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error)
+	GetItem(itemQuery, vaultQuery string) (*onepassword.Item, error)
+	GetItemByUUID(uuid string, vaultUUID string) (*onepassword.Item, error)
 	GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error)
+	GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error)
 	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultUUID string) error
@@ -217,8 +219,22 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 	return vaults, nil
 }
 
-// GetItem Get a specific Item from the 1Password Connect API
-func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
+// GetItem Get a specific Item from the 1Password Connect API by either title or UUID
+func (rs *restClient) GetItem(itemQuery string, vaultQuery string) (*onepassword.Item, error) {
+	span := rs.tracer.StartSpan("GetItem")
+	defer span.Finish()
+
+	if itemQuery == "" {
+		return nil, fmt.Errorf("Please provide either the item name or its ID.")
+	}
+	if !isValidUUID(itemQuery) {
+		return rs.GetItemByTitle(itemQuery, vaultQuery)
+	}
+	return rs.GetItemByUUID(itemQuery, vaultQuery)
+}
+
+// GetItemByUUID Get a specific Item from the 1Password Connect API by its UUID
+func (rs *restClient) GetItemByUUID(uuid string, vaultUUID string) (*onepassword.Item, error) {
 	if !isValidUUID(uuid) {
 		return nil, itemUUIDError
 	}
@@ -226,7 +242,7 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 		return nil, vaultUUIDError
 	}
 
-	span := rs.tracer.StartSpan("GetItem")
+	span := rs.tracer.StartSpan("GetItemByUUID")
 	defer span.Finish()
 
 	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s", vaultUUID, uuid)
