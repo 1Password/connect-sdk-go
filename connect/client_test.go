@@ -500,6 +500,7 @@ func Test_restClient_loadStructFromItem(t *testing.T) {
 		Username string                  `opfield:"username"`
 		Password string                  `opsection:"section" opfield:"password"`
 		Section  onepassword.ItemSection `opsection:"section"`
+		URL      onepassword.ItemURL     `opurl:"url"`
 	}
 	mockHTTPClient.Dofunc = getComplexItem
 
@@ -520,6 +521,44 @@ func Test_restClient_loadStructFromItem(t *testing.T) {
 		ID:    "",
 		Label: "section",
 	}, c.Section)
+	assert.Equal(t, onepassword.ItemURL{
+		Label: "url",
+		URL:   "https://www.appleseed.com",
+	}, c.URL)
+}
+
+func Test_restClient_loadStructFromItemAndOneItem(t *testing.T) {
+	type testConfig struct {
+		Item     onepassword.Item        `opvault:"5b52aa139ef74d7ca17918nmf8" opitem:"test-item"`
+		Username string                  `opfield:"username"`
+		Password string                  `opsection:"section" opfield:"password"`
+		Section  onepassword.ItemSection `opsection:"section"`
+		URL      onepassword.ItemURL     `opurl:"url"`
+	}
+	mockHTTPClient.Dofunc = getComplexItem
+
+	item := parsedItem{
+		vaultUUID: testID,
+		itemUUID:  testID,
+	}
+	c := testConfig{}
+
+	err := loadToStruct(&item, reflect.ValueOf(&c).Elem())
+	assert.Nil(t, err)
+	err = setValuesForTag(testClient, &item, false)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "wendy", c.Username)
+	assert.Equal(t, "appleseed", c.Password)
+	assert.Equal(t, onepassword.ItemSection{
+		ID:    "",
+		Label: "section",
+	}, c.Section)
+	assert.Equal(t, onepassword.ItemURL{
+		Label: "url",
+		URL:   "https://www.appleseed.com",
+	}, c.URL)
+	assert.Equal(t, generateComplexItem(testVaultUUID), c.Item)
 }
 
 func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
@@ -591,6 +630,17 @@ func generateComplexItem(vaultUUID string) onepassword.Item {
 					ID:    "",
 					Label: "section",
 				},
+			},
+		},
+		URLs: []onepassword.ItemURL{
+			{
+				Primary: true,
+				Label:   "site",
+				URL:     "https://www.wendy.com",
+			},
+			{
+				Label: "url",
+				URL:   "https://www.appleseed.com",
 			},
 		},
 	}
