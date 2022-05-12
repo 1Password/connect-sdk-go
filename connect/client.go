@@ -144,6 +144,9 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 
 // GetVault Get a vault based on its name or ID
 func (rs *restClient) GetVault(vaultQuery string) (*onepassword.Vault, error) {
+	span := rs.tracer.StartSpan("GetVault")
+	defer span.Finish()
+
 	if vaultQuery == "" {
 		return nil, fmt.Errorf("Please provide either the vault name or its ID.")
 	}
@@ -219,6 +222,20 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 	return vaults, nil
 }
 
+func (rs *restClient) getVaultUUID(vaultQuery string) (string, error) {
+	if vaultQuery == "" {
+		return "", fmt.Errorf("Please provide either the vault name or its ID.")
+	}
+	if isValidUUID(vaultQuery) {
+		return vaultQuery, nil
+	}
+	vault, err := rs.GetVaultByTitle(vaultQuery)
+	if err != nil {
+		return "", err
+	}
+	return vault.ID, nil
+}
+
 // GetItem Get a specific Item from the 1Password Connect API by either title or UUID
 func (rs *restClient) GetItem(itemQuery string, vaultQuery string) (*onepassword.Item, error) {
 	span := rs.tracer.StartSpan("GetItem")
@@ -234,12 +251,14 @@ func (rs *restClient) GetItem(itemQuery string, vaultQuery string) (*onepassword
 }
 
 // GetItemByUUID Get a specific Item from the 1Password Connect API by its UUID
-func (rs *restClient) GetItemByUUID(uuid string, vaultUUID string) (*onepassword.Item, error) {
+func (rs *restClient) GetItemByUUID(uuid string, vaultQuery string) (*onepassword.Item, error) {
 	if !isValidUUID(uuid) {
 		return nil, itemUUIDError
 	}
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItemByUUID")
@@ -263,9 +282,10 @@ func (rs *restClient) GetItemByUUID(uuid string, vaultUUID string) (*onepassword
 	return &item, nil
 }
 
-func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItemByTitle(title string, vaultQuery string) (*onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItemByTitle")
@@ -282,9 +302,10 @@ func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepasswo
 	return &items[0], nil
 }
 
-func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItemsByTitle(title string, vaultQuery string) ([]onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItemsByTitle")
@@ -319,9 +340,10 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 	return items, nil
 }
 
-func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItems(vaultQuery string) ([]onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItems")
@@ -346,10 +368,25 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 	return items, nil
 }
 
+func (rs *restClient) getItemUUID(itemQuery string) (string, error) {
+	if itemQuery == "" {
+		return "", fmt.Errorf("Please provide either the item name or its ID.")
+	}
+	if isValidUUID(itemQuery) {
+		return itemQuery, nil
+	}
+	item, err := rs.GetVaultByTitle(itemQuery)
+	if err != nil {
+		return "", err
+	}
+	return item.ID, nil
+}
+
 // CreateItem Create a new item in a specified vault
-func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) CreateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("CreateItem")
@@ -431,13 +468,14 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 	return nil
 }
 
-// DeleteItem Delete a new item in a specified vault, specifying the item's uuid
-func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+// DeleteItemByID Delete a new item in a specified vault, specifying the item's uuid
+func (rs *restClient) DeleteItemByID(itemUUID string, vaultQuery string) error {
 	if !isValidUUID(itemUUID) {
 		return itemUUIDError
 	}
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
 	}
 
 	span := rs.tracer.StartSpan("DeleteItemByID")
@@ -461,12 +499,14 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 	return nil
 }
 
-func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetFiles(itemQuery string, vaultQuery string) ([]onepassword.File, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
-	if !isValidUUID(itemUUID) {
-		return nil, itemUUIDError
+	itemUUID, err := rs.getItemUUID(itemQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetFiles")
@@ -494,15 +534,17 @@ func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword
 
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
-func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+func (rs *restClient) GetFile(uuid string, itemQuery string, vaultQuery string) (*onepassword.File, error) {
 	if !isValidUUID(uuid) {
 		return nil, fileUUIDError
 	}
-	if !isValidUUID(itemUUID) {
-		return nil, itemUUIDError
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+	itemUUID, err := rs.getItemUUID(itemQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetFile")
@@ -650,12 +692,15 @@ func loadToStruct(item *parsedItem, config reflect.Value) error {
 	return nil
 }
 
-func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
-	if !isValidUUID(itemUUID) {
-		return itemUUIDError
+// LoadStructFromItem Load configuration values based on struct tag from one 1P item.
+func (rs *restClient) LoadStructFromItem(i interface{}, itemQuery string, vaultQuery string) error {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
 	}
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
+	itemUUID, err := rs.getItemUUID(itemQuery)
+	if err != nil {
+		return err
 	}
 	config, err := checkStruct(i)
 	if err != nil {
@@ -675,10 +720,11 @@ func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUU
 	return nil
 }
 
-// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
-func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
+// LoadStructFromItemByTitle Load configuration values based on struct tag from one 1P item
+func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultQuery string) error {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
 	}
 
 	config, err := checkStruct(i)
@@ -699,7 +745,7 @@ func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string,
 	return nil
 }
 
-// LoadConfig Load configuration values based on struct tag
+// LoadStruct Load configuration values based on struct tag
 func (rs *restClient) LoadStruct(i interface{}) error {
 	config, err := checkStruct(i)
 	if err != nil {
