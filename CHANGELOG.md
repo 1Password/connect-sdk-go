@@ -28,7 +28,7 @@
 
 ## Fixes
 
-- `GetItemsByTitle` properly returns a list of items with all their detais instead of just their summaries. {#38}
+- `GetItemsByTitle` properly returns a list of items with all their details instead of just their summaries. {#38}
 
 ---
 
