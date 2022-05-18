@@ -96,8 +96,9 @@ type ItemSection struct {
 
 // GeneratorRecipe Representation of a "recipe" used to generate a field
 type GeneratorRecipe struct {
-	Length        int      `json:"length,omitempty"`
-	CharacterSets []string `json:"characterSets,omitempty"`
+	Length            int      `json:"length,omitempty"`
+	CharacterSets     []string `json:"characterSets,omitempty"`
+	ExcludeCharacters string   `json:"excludeCharacters,omitempty"`
 }
 
 // ItemField Representation of a single field on an Item
