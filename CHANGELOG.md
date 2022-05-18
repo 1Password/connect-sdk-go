@@ -18,7 +18,7 @@
 
 ## Features
 
-- A field's `GeneratorRecipe` now supports a set of characters that should be excluded when generating a password. This is achieved with the `ExcludeCharacters` field of the `GeneratorRecipe` struct. (#57)
+- A field's `GeneratorRecipe` now supports a set of characters that should be excluded when generating a password. This is achieved with the `ExcludeCharacters` field of the `GeneratorRecipe` struct. (requires Connect `v1.4.0` or later) (#57)
 - SDK functions now accept item/vault titles and UUIDs as parameters. (#55)
 - A vault can now be fetched by either its title or UUID. (#52)
 - SDK now supports 2 new Item categories: `MedicalRecord` and `SSHKey`. (#51)
