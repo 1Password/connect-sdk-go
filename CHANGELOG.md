@@ -24,7 +24,7 @@
 - SDK now supports 2 new Item categories: `MedicalRecord` and `SSHKey`. (#51)
 - The SDK now enables to load item autofill URLs into structs. (#56)
 - `ItemURL` struct now has an extra field which represent the label of the autofill URL. (#53)
-- Readme now has more examples for using the SDK. (#32)
+- Readme now has more examples for using the SDK (requires Connect v1.5.0 or later). (#32)
 
 ## Fixes
 
