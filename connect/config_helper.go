@@ -14,6 +14,7 @@ const (
 	itemTag    = "opitem"
 	sectionTag = "opsection"
 	fieldTag   = "opfield"
+	urlTag     = "opurl"
 
 	envVaultVar = "OP_VAULT"
 )
@@ -68,11 +69,22 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 
 	for i, field := range parsedItem.fields {
 		value := parsedItem.values[i]
+
+		if field.Type == reflect.TypeOf(onepassword.ItemURL{}) {
+			url := &onepassword.ItemURL{
+				Primary: urlPrimaryForName(field.Tag.Get(urlTag), item.URLs),
+				Label:   urlLabelForName(field.Tag.Get(urlTag), item.URLs),
+				URL:     urlURLForName(field.Tag.Get(urlTag), item.URLs),
+			}
+			value.Set(reflect.ValueOf(*url))
+			continue
+		}
+
 		path := fmt.Sprintf("%s.%s", field.Tag.Get(sectionTag), field.Tag.Get(fieldTag))
 		if path == "." {
 			if field.Type == reflect.TypeOf(onepassword.Item{}) {
 				value.Set(reflect.ValueOf(*item))
-				return nil
+				continue
 			}
 			return fmt.Errorf("There is no %q specified for %q", fieldTag, field.Name)
 		}
@@ -84,7 +96,7 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 					Label: sectionLabelForName(field.Tag.Get(sectionTag), item.Sections),
 				}
 				value.Set(reflect.ValueOf(*section))
-				return nil
+				continue
 			}
 		}
 
@@ -151,4 +163,47 @@ func sectionLabelForName(name string, sections []*onepassword.ItemSection) strin
 	}
 
 	return ""
+}
+
+func urlPrimaryForName(name string, itemURLs []onepassword.ItemURL) bool {
+	if itemURLs == nil {
+		return false
+	}
+
+	for _, url := range itemURLs {
+		if url.Label == strings.ToLower(name) {
+			return url.Primary
+		}
+	}
+
+	return false
+}
+
+func urlLabelForName(name string, itemURLs []onepassword.ItemURL) string {
+	if itemURLs == nil {
+		return ""
+	}
+
+	for _, url := range itemURLs {
+		if url.Label == strings.ToLower(name) {
+			return url.Label
+		}
+	}
+
+	return ""
+}
+
+func urlURLForName(name string, itemURLs []onepassword.ItemURL) string {
+	if itemURLs == nil {
+		return ""
+	}
+
+	for _, url := range itemURLs {
+		if url.Label == strings.ToLower(name) {
+			return url.URL
+		}
+	}
+
+	return ""
+
 }
