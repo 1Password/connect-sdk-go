@@ -36,21 +36,24 @@ type Client interface {
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
+	GetVaultByTitle(title string) (*onepassword.Vault, error)
 	GetVaultsByTitle(uuid string) ([]onepassword.Vault, error)
-	GetItem(uuid string, vaultUUID string) (*onepassword.Item, error)
-	GetItems(vaultUUID string) ([]onepassword.Item, error)
-	GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error)
-	GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error)
-	CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
-	UpdateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error)
-	DeleteItem(item *onepassword.Item, vaultUUID string) error
-	DeleteItemByID(itemUUID string, vaultUUID string) error
-	GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error)
-	GetFile(fileUUID string, itemUUID string, vaultUUID string) (*onepassword.File, error)
+	GetItems(vaultQuery string) ([]onepassword.Item, error)
+	GetItem(itemQuery, vaultQuery string) (*onepassword.Item, error)
+	GetItemByUUID(uuid string, vaultQuery string) (*onepassword.Item, error)
+	GetItemByTitle(title string, vaultQuery string) (*onepassword.Item, error)
+	GetItemsByTitle(title string, vaultQuery string) ([]onepassword.Item, error)
+	CreateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error)
+	UpdateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error)
+	DeleteItem(item *onepassword.Item, vaultQuery string) error
+	DeleteItemByID(itemUUID string, vaultQuery string) error
+	GetFiles(itemQuery string, vaultQuery string) ([]onepassword.File, error)
+	GetFile(itemQuery string, itemUUID string, vaultQuery string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
 	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
-	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultUUID string) error
-	LoadStructFromItem(config interface{}, itemUUID string, vaultUUID string) error
+	LoadStructFromItemByUUID(config interface{}, itemUUID string, vaultQuery string) error
+	LoadStructFromItemByTitle(config interface{}, itemTitle string, vaultQuery string) error
+	LoadStructFromItem(config interface{}, itemQuery string, vaultQuery string) error
 	LoadStruct(config interface{}) error
 }
 
@@ -142,6 +145,9 @@ func (rs *restClient) GetVaults() ([]onepassword.Vault, error) {
 
 // GetVault Get a vault based on its name or ID
 func (rs *restClient) GetVault(vaultQuery string) (*onepassword.Vault, error) {
+	span := rs.tracer.StartSpan("GetVault")
+	defer span.Finish()
+
 	if vaultQuery == "" {
 		return nil, fmt.Errorf("Please provide either the vault name or its ID.")
 	}
@@ -217,16 +223,46 @@ func (rs *restClient) GetVaultsByTitle(title string) ([]onepassword.Vault, error
 	return vaults, nil
 }
 
-// GetItem Get a specific Item from the 1Password Connect API
-func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item, error) {
+func (rs *restClient) getVaultUUID(vaultQuery string) (string, error) {
+	if vaultQuery == "" {
+		return "", fmt.Errorf("Please provide either the vault name or its ID.")
+	}
+	if isValidUUID(vaultQuery) {
+		return vaultQuery, nil
+	}
+	vault, err := rs.GetVaultByTitle(vaultQuery)
+	if err != nil {
+		return "", err
+	}
+	return vault.ID, nil
+}
+
+// GetItem Get a specific Item from the 1Password Connect API by either title or UUID
+func (rs *restClient) GetItem(itemQuery string, vaultQuery string) (*onepassword.Item, error) {
+	span := rs.tracer.StartSpan("GetItem")
+	defer span.Finish()
+
+	if itemQuery == "" {
+		return nil, fmt.Errorf("Please provide either the item name or its ID.")
+	}
+	if !isValidUUID(itemQuery) {
+		return rs.GetItemByTitle(itemQuery, vaultQuery)
+	}
+	return rs.GetItemByUUID(itemQuery, vaultQuery)
+}
+
+// GetItemByUUID Get a specific Item from the 1Password Connect API by its UUID
+func (rs *restClient) GetItemByUUID(uuid string, vaultQuery string) (*onepassword.Item, error) {
 	if !isValidUUID(uuid) {
 		return nil, itemUUIDError
 	}
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
-	span := rs.tracer.StartSpan("GetItem")
+	span := rs.tracer.StartSpan("GetItemByUUID")
 	defer span.Finish()
 
 	itemURL := fmt.Sprintf("/v1/vaults/%s/items/%s", vaultUUID, uuid)
@@ -247,9 +283,10 @@ func (rs *restClient) GetItem(uuid string, vaultUUID string) (*onepassword.Item,
 	return &item, nil
 }
 
-func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItemByTitle(title string, vaultQuery string) (*onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItemByTitle")
@@ -266,9 +303,10 @@ func (rs *restClient) GetItemByTitle(title string, vaultUUID string) (*onepasswo
 	return &items[0], nil
 }
 
-func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItemsByTitle(title string, vaultQuery string) ([]onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItemsByTitle")
@@ -303,9 +341,10 @@ func (rs *restClient) GetItemsByTitle(title string, vaultUUID string) ([]onepass
 	return items, nil
 }
 
-func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetItems(vaultQuery string) ([]onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetItems")
@@ -330,10 +369,25 @@ func (rs *restClient) GetItems(vaultUUID string) ([]onepassword.Item, error) {
 	return items, nil
 }
 
+func (rs *restClient) getItemUUID(itemQuery string) (string, error) {
+	if itemQuery == "" {
+		return "", fmt.Errorf("Please provide either the item name or its ID.")
+	}
+	if isValidUUID(itemQuery) {
+		return itemQuery, nil
+	}
+	item, err := rs.GetVaultByTitle(itemQuery)
+	if err != nil {
+		return "", err
+	}
+	return item.ID, nil
+}
+
 // CreateItem Create a new item in a specified vault
-func (rs *restClient) CreateItem(item *onepassword.Item, vaultUUID string) (*onepassword.Item, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) CreateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("CreateItem")
@@ -415,13 +469,14 @@ func (rs *restClient) DeleteItem(item *onepassword.Item, vaultUUID string) error
 	return nil
 }
 
-// DeleteItem Delete a new item in a specified vault, specifying the item's uuid
-func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
+// DeleteItemByID Delete a new item in a specified vault, specifying the item's uuid
+func (rs *restClient) DeleteItemByID(itemUUID string, vaultQuery string) error {
 	if !isValidUUID(itemUUID) {
 		return itemUUIDError
 	}
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
 	}
 
 	span := rs.tracer.StartSpan("DeleteItemByID")
@@ -445,12 +500,14 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultUUID string) error {
 	return nil
 }
 
-func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword.File, error) {
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+func (rs *restClient) GetFiles(itemQuery string, vaultQuery string) ([]onepassword.File, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
-	if !isValidUUID(itemUUID) {
-		return nil, itemUUIDError
+	itemUUID, err := rs.getItemUUID(itemQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetFiles")
@@ -478,15 +535,17 @@ func (rs *restClient) GetFiles(itemUUID string, vaultUUID string) ([]onepassword
 
 // GetFile Get a specific File in a specified item.
 // This does not include the file contents. Call GetFileContent() to load the file's content.
-func (rs *restClient) GetFile(uuid string, itemUUID string, vaultUUID string) (*onepassword.File, error) {
+func (rs *restClient) GetFile(uuid string, itemQuery string, vaultQuery string) (*onepassword.File, error) {
 	if !isValidUUID(uuid) {
 		return nil, fileUUIDError
 	}
-	if !isValidUUID(itemUUID) {
-		return nil, itemUUIDError
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
 	}
-	if !isValidUUID(vaultUUID) {
-		return nil, vaultUUIDError
+	itemUUID, err := rs.getItemUUID(itemQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	span := rs.tracer.StartSpan("GetFile")
@@ -634,12 +693,26 @@ func loadToStruct(item *parsedItem, config reflect.Value) error {
 	return nil
 }
 
-func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUUID string) error {
+// LoadStructFromItem Load configuration values based on struct tag from one 1P item.
+// It accepts as parameters item title/UUID and vault title/UUID.
+func (rs *restClient) LoadStructFromItem(i interface{}, itemQuery string, vaultQuery string) error {
+	if itemQuery == "" {
+		return fmt.Errorf("Please provide either the item name or its ID.")
+	}
+	if isValidUUID(itemQuery) {
+		return rs.LoadStructFromItemByUUID(i, itemQuery, vaultQuery)
+	}
+	return rs.LoadStructFromItemByTitle(i, itemQuery, vaultQuery)
+}
+
+// LoadStructFromItemByUUID Load configuration values based on struct tag from one 1P item.
+func (rs *restClient) LoadStructFromItemByUUID(i interface{}, itemUUID string, vaultQuery string) error {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
+	}
 	if !isValidUUID(itemUUID) {
 		return itemUUIDError
-	}
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
 	}
 	config, err := checkStruct(i)
 	if err != nil {
@@ -659,10 +732,11 @@ func (rs *restClient) LoadStructFromItem(i interface{}, itemUUID string, vaultUU
 	return nil
 }
 
-// LoadConfigFromItem Load configuration values based on struct tag from one 1P item
-func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultUUID string) error {
-	if !isValidUUID(vaultUUID) {
-		return vaultUUIDError
+// LoadStructFromItemByTitle Load configuration values based on struct tag from one 1P item
+func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string, vaultQuery string) error {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return err
 	}
 
 	config, err := checkStruct(i)
@@ -683,7 +757,7 @@ func (rs *restClient) LoadStructFromItemByTitle(i interface{}, itemTitle string,
 	return nil
 }
 
-// LoadConfig Load configuration values based on struct tag
+// LoadStruct Load configuration values based on struct tag
 func (rs *restClient) LoadStruct(i interface{}) error {
 	config, err := checkStruct(i)
 	if err != nil {
