@@ -456,6 +456,16 @@ func Test_restClient_DeleteItemById(t *testing.T) {
 	}
 }
 
+func Test_restClient_DeleteItemByTitle(t *testing.T) {
+	mockHTTPClient.Dofunc = deleteItemByTitle
+	err := testClient.DeleteItemByTitle(generateItem(defaultVault).Title, defaultVault)
+
+	if err != nil {
+		t.Logf("Unable to delete item: %s", err.Error())
+		t.FailNow()
+	}
+}
+
 func Test_restClient_DeleteItemError(t *testing.T) {
 	errResult := apiError(http.StatusNotFound, "Vault not found")
 	mockHTTPClient.Dofunc = respondError(errResult)
@@ -813,6 +823,23 @@ func updateItem(req *http.Request) (*http.Response, error) {
 }
 
 func deleteItem(req *http.Request) (*http.Response, error) {
+	vaultUUID := strings.ToLower(testVaultUUID)
+	itemUUID := strings.ToLower(testItemUUID)
+	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
+
+	return &http.Response{
+		Status:     http.StatusText(http.StatusNoContent),
+		StatusCode: http.StatusNoContent,
+		Header:     req.Header,
+		Body:       ioutil.NopCloser(&bytes.Buffer{}),
+	}, nil
+}
+
+func deleteItemByTitle(req *http.Request) (*http.Response, error) {
+	if req.Method != http.MethodDelete {
+		return listItemsOrGetItem(req)
+	}
+
 	vaultUUID := strings.ToLower(testVaultUUID)
 	itemUUID := strings.ToLower(testItemUUID)
 	fmt.Sscanf(req.URL.Path, "/v1/vaults/%s/items/%s", vaultUUID, itemUUID)
