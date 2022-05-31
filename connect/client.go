@@ -47,7 +47,7 @@ type Client interface {
 	UpdateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultQuery string) error
 	DeleteItemByID(itemUUID string, vaultQuery string) error
-	DeleteItemByTitle(itemTitle string, vaultQuery string) error
+	DeleteItemByTitle(title string, vaultQuery string) error
 	GetFiles(itemQuery string, vaultQuery string) ([]onepassword.File, error)
 	GetFile(itemQuery string, itemUUID string, vaultQuery string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
@@ -502,11 +502,11 @@ func (rs *restClient) DeleteItemByID(itemUUID string, vaultQuery string) error {
 }
 
 // DeleteItemByTitle Delete a new item in a specified vault, specifying the item's title
-func (rs *restClient) DeleteItemByTitle(itemTitle string, vaultQuery string) error {
+func (rs *restClient) DeleteItemByTitle(title string, vaultQuery string) error {
 	span := rs.tracer.StartSpan("DeleteItemByTitle")
 	defer span.Finish()
 
-	item, err := rs.GetItemByTitle(itemTitle, vaultQuery)
+	item, err := rs.GetItemByTitle(title, vaultQuery)
 	if err != nil {
 		return err
 	}
