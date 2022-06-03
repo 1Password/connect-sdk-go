@@ -48,7 +48,7 @@ type Client interface {
 	DeleteItem(item *onepassword.Item, vaultQuery string) error
 	DeleteItemByID(itemUUID string, vaultQuery string) error
 	GetFiles(itemQuery string, vaultQuery string) ([]onepassword.File, error)
-	GetFile(itemQuery string, itemUUID string, vaultQuery string) (*onepassword.File, error)
+	GetFile(uuid string, itemQuery string, vaultQuery string) (*onepassword.File, error)
 	GetFileContent(file *onepassword.File) ([]byte, error)
 	DownloadFile(file *onepassword.File, targetDirectory string, overwrite bool) (string, error)
 	LoadStructFromItemByUUID(config interface{}, itemUUID string, vaultQuery string) error
