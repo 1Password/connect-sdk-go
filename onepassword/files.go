@@ -10,7 +10,7 @@ type File struct {
 	Name        string       `json:"name"`
 	Section     *ItemSection `json:"section,omitempty"`
 	Size        int          `json:"size"`
-	ContentPath string       `json:"content_path"`
+	ContentPath string       `json:"contentPath"`
 	content     []byte
 }
 
@@ -20,7 +20,7 @@ func (f *File) UnmarshalJSON(data []byte) error {
 		Name        string       `json:"name"`
 		Section     *ItemSection `json:"section,omitempty"`
 		Size        int          `json:"size"`
-		ContentPath string       `json:"content_path"`
+		ContentPath string       `json:"contentPath"`
 		Content     []byte       `json:"content,omitempty"`
 	}
 	if err := json.Unmarshal(data, &jsonFile); err != nil {
