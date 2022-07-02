@@ -370,14 +370,14 @@ func (rs *restClient) GetItems(vaultQuery string) ([]onepassword.Item, error) {
 	return items, nil
 }
 
-func (rs *restClient) getItemUUID(itemQuery string) (string, error) {
+func (rs *restClient) getItemUUID(itemQuery, vaultQuery string) (string, error) {
 	if itemQuery == "" {
 		return "", fmt.Errorf("Please provide either the item name or its ID.")
 	}
 	if isValidUUID(itemQuery) {
 		return itemQuery, nil
 	}
-	item, err := rs.GetVaultByTitle(itemQuery)
+	item, err := rs.GetItemByTitle(itemQuery, vaultQuery)
 	if err != nil {
 		return "", err
 	}
@@ -519,7 +519,7 @@ func (rs *restClient) GetFiles(itemQuery string, vaultQuery string) ([]onepasswo
 	if err != nil {
 		return nil, err
 	}
-	itemUUID, err := rs.getItemUUID(itemQuery)
+	itemUUID, err := rs.getItemUUID(itemQuery, vaultQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (rs *restClient) GetFile(uuid string, itemQuery string, vaultQuery string) 
 	if err != nil {
 		return nil, err
 	}
-	itemUUID, err := rs.getItemUUID(itemQuery)
+	itemUUID, err := rs.getItemUUID(itemQuery, vaultQuery)
 	if err != nil {
 		return nil, err
 	}
