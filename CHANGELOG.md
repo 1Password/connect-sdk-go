@@ -22,7 +22,7 @@
 ## Fixes
 
 - Fix parameter names for `GetFile`. {#60}
-- Fix `getItemUUID` to properly get the item's UUID. Shoutout to @snarlysodboxer for finding this bug and contributing with a fix for it. {#64}
+- Fix `getItemUUID` to properly get the item's UUID. Credits to @snarlysodboxer for finding this bug and contributing with a fix for it. {#64}
 
 ---
 
