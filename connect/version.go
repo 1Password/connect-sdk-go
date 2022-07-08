@@ -10,7 +10,7 @@ import (
 
 // SDKVersion is the latest Semantic Version of the library
 // Do not rename this variable without changing the regex in the Makefile
-const SDKVersion = "v1.4.0"
+const SDKVersion = "1.5.0"
 
 const VersionHeaderKey = "1Password-Connect-Version"
 

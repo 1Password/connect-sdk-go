@@ -12,6 +12,20 @@
 
 ---
 
+[//]: # (START/v1.5.0)
+# v1.5.0
+
+## Features
+
+- Add `DeleteItemByTitle` function. {#61}
+
+## Fixes
+
+- Fix parameter names for `GetFile`. {#60}
+- Fix `getItemUUID` to properly get the item's UUID. Credits to @snarlysodboxer for finding this bug and contributing with a fix for it. {#64}
+
+---
+
 [//]: # "START/v1.4.0"
 
 # v1.4.0
