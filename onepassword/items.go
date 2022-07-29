@@ -41,7 +41,7 @@ const (
 	FieldPurposePassword ItemFieldPurpose = "PASSWORD"
 	FieldPurposeNotes    ItemFieldPurpose = "NOTES"
 
-	FieldTypeAddress          ItemFieldType = "Address"
+	FieldTypeAddress          ItemFieldType = "ADDRESS"
 	FieldTypeConcealed        ItemFieldType = "CONCEALED"
 	FieldTypeCreditCardNumber ItemFieldType = "CREDIT_CARD_NUMBER"
 	FieldTypeCreditCardType   ItemFieldType = "CREDIT_CARD_TYPE"
@@ -56,7 +56,7 @@ const (
 	FieldTypeString           ItemFieldType = "STRING"
 	FieldTypeURL              ItemFieldType = "URL"
 	FieldTypeFile             ItemFieldType = "FILE"
-	FieldTypeSSHKey           ItemFieldType = "SSHKEY"
+	FieldTypeSSHKey           ItemFieldType = "SSH_KEY"
 	FieldTypeUnknown          ItemFieldType = "UNKNOWN"
 )
 
