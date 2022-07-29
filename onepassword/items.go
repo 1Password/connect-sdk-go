@@ -9,6 +9,8 @@ import (
 // ItemCategory Represents the template of the Item
 type ItemCategory string
 
+type ItemFieldPurpose string
+
 const (
 	Login                ItemCategory = "LOGIN"
 	Password             ItemCategory = "PASSWORD"
@@ -32,6 +34,10 @@ const (
 	MedicalRecord        ItemCategory = "MEDICAL_RECORD"
 	SSHKey               ItemCategory = "SSH_KEY"
 	Custom               ItemCategory = "CUSTOM"
+
+	FieldPurposeUsername ItemFieldPurpose = "USERNAME"
+	FieldPurposePassword ItemFieldPurpose = "PASSWORD"
+	FieldPurposeNotes    ItemFieldPurpose = "NOTES"
 )
 
 // UnmarshalJSON Unmarshall Item Category enum strings to Go string enums
@@ -106,7 +112,7 @@ type ItemField struct {
 	ID       string           `json:"id"`
 	Section  *ItemSection     `json:"section,omitempty"`
 	Type     string           `json:"type"`
-	Purpose  string           `json:"purpose,omitempty"`
+	Purpose  ItemFieldPurpose `json:"purpose,omitempty"`
 	Label    string           `json:"label,omitempty"`
 	Value    string           `json:"value,omitempty"`
 	Generate bool             `json:"generate,omitempty"`
