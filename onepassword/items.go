@@ -11,6 +11,8 @@ type ItemCategory string
 
 type ItemFieldPurpose string
 
+type ItemFieldType string
+
 const (
 	Login                ItemCategory = "LOGIN"
 	Password             ItemCategory = "PASSWORD"
@@ -38,6 +40,24 @@ const (
 	FieldPurposeUsername ItemFieldPurpose = "USERNAME"
 	FieldPurposePassword ItemFieldPurpose = "PASSWORD"
 	FieldPurposeNotes    ItemFieldPurpose = "NOTES"
+
+	FieldTypeAddress          ItemFieldType = "Address"
+	FieldTypeConcealed        ItemFieldType = "CONCEALED"
+	FieldTypeCreditCardNumber ItemFieldType = "CREDIT_CARD_NUMBER"
+	FieldTypeCreditCardType   ItemFieldType = "CREDIT_CARD_TYPE"
+	FieldTypeDate             ItemFieldType = "DATE"
+	FieldTypeEmail            ItemFieldType = "EMAIL"
+	FieldTypeGender           ItemFieldType = "GENDER"
+	FieldTypeMenu             ItemFieldType = "MENU"
+	FieldTypeMonthYear        ItemFieldType = "MONTH_YEAR"
+	FieldTypeOTP              ItemFieldType = "OTP"
+	FieldTypePhone            ItemFieldType = "PHONE"
+	FieldTypeReference        ItemFieldType = "REFERENCE"
+	FieldTypeString           ItemFieldType = "STRING"
+	FieldTypeURL              ItemFieldType = "URL"
+	FieldTypeFile             ItemFieldType = "FILE"
+	FieldTypeSSHKey           ItemFieldType = "SSHKEY"
+	FieldTypeUnknown          ItemFieldType = "UNKNOWN"
 )
 
 // UnmarshalJSON Unmarshall Item Category enum strings to Go string enums
@@ -111,7 +131,7 @@ type GeneratorRecipe struct {
 type ItemField struct {
 	ID       string           `json:"id"`
 	Section  *ItemSection     `json:"section,omitempty"`
-	Type     string           `json:"type"`
+	Type     ItemFieldType    `json:"type"`
 	Purpose  ItemFieldPurpose `json:"purpose,omitempty"`
 	Label    string           `json:"label,omitempty"`
 	Value    string           `json:"value,omitempty"`
