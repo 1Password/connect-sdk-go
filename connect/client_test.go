@@ -307,6 +307,18 @@ func Test_restClient_GetItemNotFound(t *testing.T) {
 	}
 }
 
+func Test_restClient_GetItemFailWithNotJsonBody(t *testing.T) {
+	errResult := apiError(http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+	mockHTTPClient.Dofunc = respondErrorWithHtmlBody(errResult)
+	item, err := testClient.GetItem(testID, testID)
+
+	assert.ErrorIs(t, err, errResult)
+	if item != nil {
+		t.Log("Expected no items returns")
+		t.FailNow()
+	}
+}
+
 func Test_restClient_GetItems(t *testing.T) {
 	mockHTTPClient.Dofunc = listItems
 	items, err := testClient.GetItems(testID)
@@ -597,6 +609,18 @@ func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Resp
 			StatusCode: apiErr.StatusCode,
 			Header:     req.Header,
 			Body:       ioutil.NopCloser(bytes.NewReader(body)),
+		}, nil
+	}
+}
+
+func respondErrorWithHtmlBody(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		body := "<html></html>"
+		return &http.Response{
+			Status:     http.StatusText(apiErr.StatusCode),
+			StatusCode: apiErr.StatusCode,
+			Header:     req.Header,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(body))),
 		}, nil
 	}
 }
