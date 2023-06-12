@@ -12,6 +12,14 @@
 
 ---
 
+[//]: # (START/v1.5.1)
+# v1.5.1
+
+## Features
+  * Added constants for item field purpose and type. {67}
+  * Improved error handling when does not contain a valid json body. {63}
+---
+
 [//]: # (START/v1.5.0)
 # v1.5.0
 
