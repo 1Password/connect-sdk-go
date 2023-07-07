@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
 	"github.com/1Password/connect-sdk-go/onepassword"
 )
 

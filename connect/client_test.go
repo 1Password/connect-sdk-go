@@ -12,10 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/1Password/connect-sdk-go/onepassword"
 	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/1Password/connect-sdk-go/onepassword"
 )
 
 var validHost string
@@ -152,7 +151,7 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewClientWithUserAgent(t *testing.T) {
-	client := NewClientWithUserAgent(validHost, validToken, "testSuite")
+	client := NewClientWithUserAgent(validHost, validToken, "testSuite", nil)
 
 	restClient, ok := client.(*restClient)
 	if !ok {

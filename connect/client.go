@@ -85,11 +85,15 @@ func NewClientFromEnvironment() (Client, error) {
 
 // NewClient Returns a Secret Service client for a given url and jwt
 func NewClient(url string, token string) Client {
-	return NewClientWithUserAgent(url, token, fmt.Sprintf(defaultUserAgent, SDKVersion))
+	return NewClientWithUserAgent(url, token, fmt.Sprintf(defaultUserAgent, SDKVersion), nil)
+}
+
+func NewClientWithHeaders(url string, token string, custHeaders map[string]string) Client {
+	return NewClientWithUserAgent(url, token, fmt.Sprintf(defaultUserAgent, SDKVersion), custHeaders)
 }
 
 // NewClientWithUserAgent Returns a Secret Service client for a given url and jwt and identifies with userAgent
-func NewClientWithUserAgent(url string, token string, userAgent string) Client {
+func NewClientWithUserAgent(url string, token string, userAgent string, custHeaders map[string]string) Client {
 	if !opentracing.IsGlobalTracerRegistered() {
 		cfg := jaegerClientConfig.Configuration{}
 		zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
@@ -101,23 +105,52 @@ func NewClientWithUserAgent(url string, token string, userAgent string) Client {
 		)
 	}
 
-	return &restClient{
-		URL:   url,
-		Token: token,
+	if len(custHeaders) == 0 {
+		return &restClient{
+			URL:   url,
+			Token: token,
 
-		userAgent: userAgent,
-		tracer:    opentracing.GlobalTracer(),
+			userAgent: userAgent,
+			tracer:    opentracing.GlobalTracer(),
 
-		client: http.DefaultClient,
+			client: http.DefaultClient,
+		}
+	} else {
+		headers := []customHeader{}
+		for custHeaderKey, custHeaderValue := range custHeaders {
+			headers = append(headers, customHeader{key: custHeaderKey, value: custHeaderValue})
+		}
+
+		return &restClient{
+			URL:   url,
+			Token: token,
+
+			userAgent: userAgent,
+			tracer:    opentracing.GlobalTracer(),
+
+			client:        http.DefaultClient,
+			customHeaders: headers,
+		}
 	}
 }
 
 type restClient struct {
-	URL       string
-	Token     string
-	userAgent string
-	tracer    opentracing.Tracer
-	client    httpClient
+	URL           string
+	Token         string
+	userAgent     string
+	tracer        opentracing.Tracer
+	client        httpClient
+	customHeaders []customHeader
+}
+type customHeader struct {
+	key   string
+	value string
+}
+
+// Add Custom Header to Client Struct
+func (rs *restClient) AddHeader(key string, value string) {
+	custHeader := customHeader{key: key, value: value}
+	rs.customHeaders = append(rs.customHeaders, custHeader)
 }
 
 // GetVaults Get a list of all available vaults
@@ -681,6 +714,10 @@ func (rs *restClient) buildRequest(method string, path string, body io.Reader, s
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", rs.Token))
 	request.Header.Set("User-Agent", rs.userAgent)
+
+	for _, custHeader := range rs.customHeaders {
+		request.Header.Set(custHeader.key, custHeader.value)
+	}
 
 	ext.SpanKindRPCClient.Set(span)
 	ext.HTTPUrl.Set(span, path)
