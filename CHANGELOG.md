@@ -12,6 +12,13 @@
 
 ---
 
+[//]: # (START/v1.5.2)
+# v1.5.2
+## Fixes
+ * Downgrading atomic dependency due to compatibilty issues with Gorelaser. {81}
+
+---
+
 [//]: # (START/v1.5.1)
 # v1.5.1
 
