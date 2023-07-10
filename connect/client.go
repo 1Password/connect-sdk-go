@@ -33,6 +33,7 @@ var (
 
 // Client Represents an available 1Password Connect API to connect to
 type Client interface {
+	AddHeader(key string, value string)
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
