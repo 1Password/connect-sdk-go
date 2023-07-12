@@ -13,7 +13,6 @@
 
 The 1Password Connect Go SDK provides access to the [1Password Connect](https://developer.1password.com/docs/connect) API, to facilitate communication with the Connect server hosted on your infrastructure and 1Password. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
 
-
 ## ✨ Quickstart
 
 1. Download and install the 1Password Connect Go SDK:
@@ -23,6 +22,7 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 
 2. Use it in your code
    - Read a secret:
+   
      ```go
      import "github.com/1Password/connect-sdk-go/connect"
 
@@ -36,6 +36,7 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 	 ```
 
    - Write a secret:
+
      ```go
      import (
          "github.com/1Password/connect-sdk-go/connect"
@@ -75,93 +76,3 @@ For more examples, check out [USAGE.md](USAGE.md).
 Please file requests via [**BugCrowd**](https://bugcrowd.com/agilebits).
 
 For information about security practices, please visit the [1Password Bug Bounty Program](https://bugcrowd.com/agilebits).
-
-
-<!-- # 1Password Connect Go SDK
-
-[![Go Reference](https://pkg.go.dev/badge/github.com/1Password/connect-sdk-go.svg)](https://pkg.go.dev/github.com/1Password/connect-sdk-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/1Password/connect-sdk-go)](https://goreportcard.com/report/github.com/1Password/connect-sdk-go)
-[![Version](https://img.shields.io/github/release/1Password/connect-sdk-go.svg)](https://github.com/1Password/connect-sdk-go/releases/)
-
-The 1Password Connect Go SDK provides access to the [1Password Connect](https://support.1password.com/secrets-automation/) API, to facilitate communication with the Connect server hosted on your infrastructure and 1Password. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
-
-<details>
-  <summary>Table of Contents</summary>
-
-  * [Prerequisites](#prerequisites)
-  * [Installation](#installation)
-  * [Usage](#usage)
-    + [Quickstart](#quickstart)
-    + [Creating an API Client](#creating-an-api-client)
-    + [Model Objects](#model-objects)
-    + [Item CRUD](#item-crud)
-      - [Retrieving list of vaults that the Connect token has permission to read](#retrieving-list-of-vaults-that-the-connect-token-has-permission-to-read)
-      - [Retrieving all items in a vault](#retrieving-all-items-in-a-vault)
-      - [Retrieving item by title](#retrieving-item-by-title)
-      - [Retrieving items by vault and item UUID](#retrieving-items-by-vault-and-item-uuid)
-      - [Creating items in a vault](#creating-items-in-a-vault)
-      - [Update and Item](#update-and-item)
-      - [Delete an item](#delete-an-item)
-      - [Retrieving a file from an item](#retrieving-a-file-from-an-item)
-      - [Retrieving the contents of a file from an item](#retrieving-the-contents-of-a-file-from-an-item)
-    + [Unmarshalling into a Struct](#unmarshalling-into-a-struct)
-      - [Example Struct](#example-struct)
-    + [Environment Variables](#environment-variables)
-    + [Errors](#errors)
-  * [Development](#development)
-    + [Building](#building)
-    + [Running Tests](#running-tests)
-  * [Security](#security)
-</details>
-
-## Prerequisites
-
-- [1Password Connect](https://support.1password.com/secrets-automation/#step-2-deploy-a-1password-connect-server) deployed in your infrastructure
-
-## Installation and Importing
-To download and install the 1Password Connect Go SDK, as well as its dependencies:
-```sh
-go get github.com/1Password/connect-sdk-go
-```
-
-To import the 1Password Connect SDK in your Go project:
-```go
-import (
-    "github.com/1Password/connect-sdk-go/connect"
-	"github.com/1Password/connect-sdk-go/onepassword"
-)
-```
-
-## Development
-
-### Building
-
-To build all packages:
-
-```sh
-make build
-```
-
-### Running Tests
-
-Run all tests:
-
-```sh
-make test
-```
-
-Run all tests with code coverage:
-
-```sh
-make test/coverage
-```
-
-## Security
-
-1Password requests you practice responsible disclosure if you discover a vulnerability.
-
-Please file requests via [**BugCrowd**](https://bugcrowd.com/agilebits).
-
-For information about security practices, please visit our [Security homepage](https://bugcrowd.com/agilebits).
-
--->
