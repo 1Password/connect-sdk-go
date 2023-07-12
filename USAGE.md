@@ -1,10 +1,11 @@
 ## Usage
 
-Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go). 
+Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go).
 
 ### Quickstart
 
 Reading a secret:
+
 ```go
 import "github.com/1Password/connect-sdk-go/connect"
 
@@ -18,6 +19,7 @@ func main () {
 ```
 
 Writing a secret:
+
 ```go
 import (
     "github.com/1Password/connect-sdk-go/connect"
@@ -47,20 +49,22 @@ func main () {
 A 1Password Connect client (`connect.Client`) is required to make requests to the Connect server via the 1Password Go SDK.
 The client is configured with a token and a hostname. Three constructor methods that allow for creating the 1Password Connect client are provided.
 
-* `connect.NewClient` – Accepts a hostname and a token value.
-```go
-package main
+- `connect.NewClient` – Accepts a hostname and a token value.
 
-import "github.com/1Password/connect-sdk-go/connect"
+  ```go
+  package main
 
-func main () {
-	client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
-}
-```
+  import "github.com/1Password/connect-sdk-go/connect"
 
-* `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment, and expects these to be passed as environment variables (`OP_CONNECT_HOST` and `OP_CONNECT_TOKEN`, respectively).
+  func main () {
+      client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
+  }
+  ```
+
+- `connect.NewClientFromEnvironment` – Fetches the hostname and token value from the environment, and expects these to be passed as environment variables (`OP_CONNECT_HOST` and `OP_CONNECT_TOKEN`, respectively).
 
 Assuming that `OP_CONNECT_TOKEN` and `OP_CONNECT_HOST` have been set as environment variables, the `connect.NewClientFromEnvironment` can be invoked as such:
+
 ```go
 package main
 
@@ -74,7 +78,8 @@ func main () {
 }
 ```
 
-* `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API:
+- `connect.NewClientWithUserAgent` – Accepts a hostname, a token value, and a custom User-Agent string for identifying the client to the 1Password Connect API:
+
 ```go
 package main
 
@@ -94,6 +99,7 @@ The `onepassword.Item` model represents items and `onepassword.Vault` represents
 The `connect.Client` supports methods for:
 
 #### Retrieving a list of vaults that the Connect token has permission to read
+
 ```go
 	vaults, err := client.GetVaults()
 	if err != nil {
@@ -102,6 +108,7 @@ The `connect.Client` supports methods for:
 ```
 
 #### Retrieving a vault:
+
 ```go
 	vault, err := client.GetVault("vault-uuid")
 	if err != nil {
@@ -110,6 +117,7 @@ The `connect.Client` supports methods for:
 ```
 
 #### Retrieving all items in a vault
+
 ```go
 	items, err := client.GetItems("vault-uuid")
 	if err != nil {
@@ -118,7 +126,9 @@ The `connect.Client` supports methods for:
 ```
 
 #### Retrieving an item by title
+
 To retrieve all items in a vault with a given title:
+
 ```go
 	items, err := client.GetItemsByTitle("items-title", "vault-uuid")
 	if err != nil {
@@ -127,6 +137,7 @@ To retrieve all items in a vault with a given title:
 ```
 
 In case the item title is unique for a vault, another function is available as well, returning only one item, instead of a slice:
+
 ```go
 	item, err := client.GetItemByTitle("item-title", "vault-uuid")
 	if err != nil {
@@ -135,6 +146,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Retrieving items by vault UUID and item UUID
+
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
@@ -143,6 +155,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Creating an item in a vault
+
 ```go
 	item := &onepassword.Item{
 		Title:    "Secret String",
@@ -161,6 +174,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Updating an item
+
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
@@ -172,6 +186,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Deleting an item
+
 ```go
 	item, err := client.GetItem("item-uuid", "vault-uuid")
 	if err != nil {
@@ -185,6 +200,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Deleting an item by UUID
+
 ```go
 	err := client.DeleteItemByID("item-uuid", "vault-uuid")
 	if err != nil {
@@ -193,6 +209,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Retrieving a file from an item
+
 ```go
 	file, err := client.GetFile("<file-uuid>", "item-uuid", "vault-uuid")
 	if err != nil {
@@ -201,6 +218,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Retrieving the contents of a file from an item
+
 ```go
 	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
 	if err != nil {
@@ -214,6 +232,7 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Retrieving all files under an item
+
 ```go
 	files, err := client.GetFiles("item-uuid", "vault-uuid")
 	if err != nil {
@@ -222,7 +241,8 @@ In case the item title is unique for a vault, another function is available as w
 ```
 
 #### Downloading a file
-```go	
+
+```go
 	file, err := client.GetFile("file-uuid", "item-uuid", "vault-uuid")
 	if err != nil {
 		log.Fatal(err)
@@ -240,10 +260,10 @@ Users can define tags on a struct and have the `connect.Client` unmarshall item 
 
 - `opvault` – The UUID of the vault the item should come from
 - `opitem` – The title of the Item
-- `opsection` - The section where the required field is located 
+- `opsection` - The section where the required field is located
 - `opfield` – The item field whose value should be retrieved
 
-All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag. 
+All retrieved fields require at least the `opfield` and `opitem` tags, while all retrieved items require the `opitem` tag. Additionally, a custom vault can be specified by setting the `opvault` tag.
 In case this is not set, the SDK will use the value of the `OP_VAULT` environment variable as the default UUID.
 If a field is within a section, the `opsection` tag is required as well. Please note that one cannot retrieve a section in itself.
 
@@ -276,7 +296,9 @@ func main() {
 }
 
 ```
+
 Additionally, fields of the same item can be added to a struct at once, without needing to specify the `opitem` or `opvault` tags:
+
 ```go
 package main
 
@@ -293,20 +315,27 @@ func main () {
 		panic(err)
 	}
 	c := Config{}
-	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4") // retrieve using item title
-        err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4") // retrieve using item uuid
+
+    // retrieve using item title
+	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4")
+
+    // retrieve using item uuid
+    err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4")
 }
 ```
 
 ### Environment Variables
 
 The Connect Go SDK makes use of the following environment variables:
-* `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
-* `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
-* `OP_VAULT`: a vault UUID. Used as default vault in the `LoadStruct`, `LoadStructFromItemByTitle` and `LoadStructFromItem` functions, for all fields where the `opvault` tag is not set.
+
+- `OP_CONNECT_TOKEN`: the API token to be used to authenticate the client to your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
+- `OP_CONNECT_HOST`: the hostname of your 1Password Connect instance. Used in order to authenticate via the `connect.NewClientFromEnvironment` function.
+- `OP_VAULT`: a vault UUID. Used as default vault in the `LoadStruct`, `LoadStructFromItemByTitle` and `LoadStructFromItem` functions, for all fields where the `opvault` tag is not set.
 
 ### Errors
+
 All errors returned by Connect API are unmarshalled into a `onepassword.Error` struct:
+
 ```go
 type Error struct {
     StatusCode int    `json:"status"`
@@ -315,6 +344,7 @@ type Error struct {
 ```
 
 Details of the errors can be accessed by using `errors.As()`:
+
 ```go
 _, err := client.GetVaults()
 if err != nil{
