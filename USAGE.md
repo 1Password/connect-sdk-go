@@ -2,7 +2,7 @@
 
 Below, you can find a selection of the most used functionality of the Connect Go SDK. For more detailed information about the content of the SDK, please refer to the [GoDocs](https://pkg.go.dev/github.com/1Password/connect-sdk-go).
 
-## Creating an API Client
+## Creating a Connect API Client
 
 A 1Password Connect client (`connect.Client`) is required to make requests to the Connect server via the 1Password Go SDK.
 The client is configured with a token and a hostname. Three constructor methods that allow for creating the 1Password Connect client are provided.
