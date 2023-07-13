@@ -88,7 +88,7 @@ if err != nil {
 }
 
 // Create an item
-item := &onepassword.Item{
+newItem := &onepassword.Item{
 	Title:    "Secret String",
 	Category: onepassword.Login,
 	Tags:     []string{"1password-connect"},
@@ -98,7 +98,7 @@ item := &onepassword.Item{
 	}},
 }
 
-createdItem, err := client.CreateItem(item, vault)
+createdItem, err := client.CreateItem(newItem, vault)
 if err != nil {
 	log.Fatal(err)
 }
