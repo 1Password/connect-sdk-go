@@ -16,18 +16,26 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 ## ✨ Quickstart
 
 1. Download and install the 1Password Connect Go SDK:
+   
    ```sh
    go get github.com/1Password/connect-sdk-go
    ```
 
-2. Use it in your code
+2. Export the `OP_CONNECT_HOST` and `OP_CONNECT_TOKEN` environment variables:
+
+   ```sh
+   export OP_CONNECT_HOST=<your-connect-host> && \
+       export OP_CONNECT_TOKEN=<your-connect-token>
+   ```
+
+3. Use it in your code
    - Read a secret:
    
      ```go
      import "github.com/1Password/connect-sdk-go/connect"
 
      func main () {
-		 client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
+		 client := connect.NewClientFromEnvironment()
 	 	 item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
 	 	 if err != nil {
 			 log.Fatal(err)
@@ -44,7 +52,7 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
      )
 
      func main () {
-	     client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
+	     client := connect.NewClientFromEnvironment()
 	     item := &onepassword.Item{
 			 Title:    "Secret String",
 			 Category: onepassword.Login,
