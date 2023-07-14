@@ -15,7 +15,7 @@ The client is configured with a token and a hostname. Three constructor methods 
   import "github.com/1Password/connect-sdk-go/connect"
 
   func main () {
-	  client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
+      client := connect.NewClient("<your_connect_host>", "<your_connect_token>")
   }
   ```
 
@@ -29,10 +29,10 @@ The client is configured with a token and a hostname. Three constructor methods 
   import "github.com/1Password/connect-sdk-go/connect"
 
   func main () {
-	  client, err:= connect.NewClientFromEnvironment()
-	  if err != nil {
-		  panic(err)
-	  }
+      client, err:= connect.NewClientFromEnvironment()
+      if err != nil {
+          panic(err)
+      }
   }
   ```
 
@@ -44,7 +44,7 @@ The client is configured with a token and a hostname. Three constructor methods 
   import "github.com/1Password/connect-sdk-go/connect"
 
   func main () {
-	  client := connect.NewClientWithUserAgent("<your_connect_host>", "<your_connect_token>", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) FxiOS/8.1.1b4948 Mobile/14F89 Safari/603.2.4")
+      client := connect.NewClientWithUserAgent("<your_connect_host>", "<your_connect_token>", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) FxiOS/8.1.1b4948 Mobile/14F89 Safari/603.2.4")
   }
   ```
 
@@ -54,23 +54,23 @@ The client is configured with a token and a hostname. Three constructor methods 
 // Get a list of all vaults
 vaults, err := client.GetVaults()
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Get a specific vault
 vault, err := client.GetVault("vaultID _or_ vaultTitle")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 vaultByID, err := client.GetVaultById("vaultID")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 vaultByTitle, err := client.GetVaultByTitle("vaultTitle")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 ```
 
@@ -84,52 +84,52 @@ vault := "vaultID _or_ vaultTitle"
 // Get a list of all items in a vault
 items, err := client.GetItems(vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Create an item
 newItem := &onepassword.Item{
-	Title:    "Secret String",
-	Category: onepassword.Login,
-	Tags:     []string{"1password-connect"},
-	Fields: []*onepassword.ItemField{{
-		Value: "mysecret",
-		Type:  "STRING",
-	}},
+    Title:    "Secret String",
+    Category: onepassword.Login,
+    Tags:     []string{"1password-connect"},
+    Fields: []*onepassword.ItemField{{
+        Value: "mysecret",
+        Type:  "STRING",
+    }},
 }
 
 createdItem, err := client.CreateItem(newItem, vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Get an item
 item, err := client.GetItem("itemID _or_ itemTitle", vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 itemByID, err := client.GetItem("itemID", vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 itemByTitle, err := client.GetItem("itemTitle", vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Update an item
 item.Title = "New Item Title"
 updatedItem, err := client.UpdateItem(item, vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Delete an item
 err = client.DeleteItem(item, vault)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 ```
 
@@ -139,19 +139,19 @@ if err != nil {
 // Get all files under an item
 files, err := client.GetFiles("itemID _or_ itemTitle", "vaultID _or_ vaultTitle")
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Get a file's contents
 fileContent, err := client.GetFileContent(files[0])
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // Download a file's contents
 path, err := client.DownloadFile(files[1], "local/path/to/file", true)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 ```
 
@@ -176,24 +176,24 @@ This example struct will retrieve 3 fields from one item and a whole item from a
 package main
 
 import (
-	"github.com/1Password/connect-sdk-go/connect"
-	"github.com/1Password/connect-sdk-go/onepassword"
+    "github.com/1Password/connect-sdk-go/connect"
+    "github.com/1Password/connect-sdk-go/onepassword"
 )
 
 type Config struct {
-	Username string           `opitem:"Demo TF Database" opfield:"username"`
-	Password string           `opitem:"Demo TF Database" opfield:"password"`
-	Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"hostname"`
-	APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
+    Username string           `opitem:"Demo TF Database" opfield:"username"`
+    Password string           `opitem:"Demo TF Database" opfield:"password"`
+    Host     string           `opitem:"Demo TF Database" opsection:"details" opfield:"hostname"`
+    APIKey   onepassword.Item `opvault:"7vs66j55o6md5btwcph272mva4" opitem:"API Key"`
 }
 
 func main() {
-	client, err := connect.NewClientFromEnvironment()
-	if err != nil {
-		panic(err)
-	}
-	c := Config{}
-	err = client.LoadStruct(&c)
+    client, err := connect.NewClientFromEnvironment()
+    if err != nil {
+        panic(err)
+    }
+    c := Config{}
+    err = client.LoadStruct(&c)
 }
 ```
 
@@ -205,22 +205,22 @@ package main
 import "github.com/1Password/connect-sdk-go/connect"
 
 type Config struct {
-	Username string     `opfield:"username"`
-	Password string     `opfield:"password"`
+    Username string     `opfield:"username"`
+    Password string     `opfield:"password"`
 }
 
 func main () {
-	client, err := connect.NewClientFromEnvironment()
-	if err != nil {
-		panic(err)
-	}
-	c := Config{}
+    client, err := connect.NewClientFromEnvironment()
+    if err != nil {
+        panic(err)
+    }
+    c := Config{}
 
-	// retrieve using item title
-	err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4")
+    // retrieve using item title
+    err = client.LoadStructFromItemByTitle(&c, "Demo TF Database", "7vs66j55o6md5btwcph272mva4")
 
-	// retrieve using item uuid
-	err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4")
+    // retrieve using item uuid
+    err = client.LoadStructFromItem(&c, "4bc73kao58g2usb582ndn3w4", "7vs66j55o6md5btwcph272mva4")
 }
 ```
 
@@ -238,8 +238,8 @@ All errors returned by Connect API are unmarshalled into a `onepassword.Error` s
 
 ```go
 type Error struct {
-	StatusCode int    `json:"status"`
-	Message    string `json:"message"`
+    StatusCode int    `json:"status"`
+    Message    string `json:"message"`
 }
 ```
 
@@ -248,12 +248,12 @@ Details of the errors can be accessed by using `errors.As()`:
 ```go
 _, err := client.GetVaults()
 if err != nil{
-	var opErr *onepassword.Error
-	if errors.As(err, &opErr){
-		fmt.Printf("message=%s, status code=%d\n",
-			opErr.Message,
-			opErr.StatusCode,
-		)
-	}
+    var opErr *onepassword.Error
+    if errors.As(err, &opErr){
+        fmt.Printf("message=%s, status code=%d\n",
+            opErr.Message,
+            opErr.StatusCode,
+        )
+    }
 }
 ```

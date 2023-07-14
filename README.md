@@ -16,7 +16,7 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 ## ✨ Quickstart
 
 1. Download and install the 1Password Connect Go SDK:
-   
+
    ```sh
    go get github.com/1Password/connect-sdk-go
    ```
@@ -29,47 +29,48 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
    ```
 
 3. Use it in your code
+
    - Read a secret:
-   
+
      ```go
      import "github.com/1Password/connect-sdk-go/connect"
 
      func main () {
-		 client := connect.NewClientFromEnvironment()
-		 item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
-		 if err != nil {
-			 log.Fatal(err)
-			 }
-	 }
-	 ```
+         client := connect.NewClientFromEnvironment()
+         item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+         if err != nil {
+             log.Fatal(err)
+         }
+     }
+     ```
 
    - Write a secret:
 
      ```go
      import (
-    	 "github.com/1Password/connect-sdk-go/connect"
-		 "github.com/1Password/connect-sdk-go/onepassword"
+         "github.com/1Password/connect-sdk-go/connect"
+         "github.com/1Password/connect-sdk-go/onepassword"
      )
 
      func main () {
-		 client := connect.NewClientFromEnvironment()
-		 item := &onepassword.Item{
-			 Title:    "Secret String",
-			 Category: onepassword.Login,
-			 Fields: []*onepassword.ItemField{{
-				 Value: "mysecret",
-				 Type:  "STRING",
-			 }},
-		 }
+         client := connect.NewClientFromEnvironment()
+         item := &onepassword.Item{
+             Title:    "Secret String",
+             Category: onepassword.Login,
+             Fields: []*onepassword.ItemField{{
+                 Value: "mysecret",
+                 Type:  "STRING",
+             }},
+         }
 
-		 postedItem, err := client.CreateItem(item, "<vault-uuid>")
-		 if err != nil {
-			 log.Fatal(err)
-		 }
-	 }
-	 ```
+         postedItem, err := client.CreateItem(item, "<vault-uuid>")
+         if err != nil {
+             log.Fatal(err)
+         }
+     }
+     ```
 
-For more examples, check out [USAGE.md](USAGE.md). 
+For more examples, check out [USAGE.md](USAGE.md).
 
 ## 💙 Community & Support
 
