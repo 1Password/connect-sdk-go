@@ -36,10 +36,10 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 
      func main () {
 		 client := connect.NewClientFromEnvironment()
-	 	 item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
-	 	 if err != nil {
+		 item, err := client.GetItem("<item-uuid>", "<vault-uuid>")
+		 if err != nil {
 			 log.Fatal(err)
-		 }
+			 }
 	 }
 	 ```
 
@@ -47,13 +47,13 @@ The 1Password Connect Go SDK provides access to the [1Password Connect](https://
 
      ```go
      import (
-         "github.com/1Password/connect-sdk-go/connect"
-	     "github.com/1Password/connect-sdk-go/onepassword"
+    	 "github.com/1Password/connect-sdk-go/connect"
+		 "github.com/1Password/connect-sdk-go/onepassword"
      )
 
      func main () {
-	     client := connect.NewClientFromEnvironment()
-	     item := &onepassword.Item{
+		 client := connect.NewClientFromEnvironment()
+		 item := &onepassword.Item{
 			 Title:    "Secret String",
 			 Category: onepassword.Login,
 			 Fields: []*onepassword.ItemField{{
