@@ -34,6 +34,7 @@ var (
 // Client Represents an available 1Password Connect API to connect to
 type Client interface {
 	AddHeader(key string, value string)
+	Heartbeat() (resp string, err error)
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
@@ -152,6 +153,30 @@ type customHeader struct {
 func (rs *restClient) AddHeader(key string, value string) {
 	custHeader := customHeader{key: key, value: value}
 	rs.customHeaders = append(rs.customHeaders, custHeader)
+}
+
+// Get heartbeat from Connector Server
+func (rs *restClient) Heartbeat() (resp string, err error) {
+	span := rs.tracer.StartSpan("Heartbeat")
+	defer span.Finish()
+
+	heartbeatURL := fmt.Sprintf("/heartbeat")
+	request, err := rs.buildRequest(http.MethodGet, heartbeatURL, http.NoBody, span)
+	if err != nil {
+		return "", err
+	}
+
+	response, err := rs.client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 // GetVaults Get a list of all available vaults
