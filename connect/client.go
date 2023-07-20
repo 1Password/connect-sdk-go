@@ -163,17 +163,17 @@ func (rs *restClient) Heartbeat() (alive bool, err error) {
 	heartbeatURL := fmt.Sprintf("/heartbeat")
 	request, err := rs.buildRequest(http.MethodGet, heartbeatURL, http.NoBody, span)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	response, err := rs.client.Do(request)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	heartbeatSuccess := string(body) == "."
