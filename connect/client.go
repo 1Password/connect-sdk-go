@@ -34,7 +34,7 @@ var (
 // Client Represents an available 1Password Connect API to connect to
 type Client interface {
 	AddHeader(key string, value string)
-	Heartbeat() (resp string, err error)
+	Heartbeat() (alive bool, err error)
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
@@ -156,7 +156,7 @@ func (rs *restClient) AddHeader(key string, value string) {
 }
 
 // Get heartbeat from Connector Server
-func (rs *restClient) Heartbeat() (resp string, err error) {
+func (rs *restClient) Heartbeat() (alive bool, err error) {
 	span := rs.tracer.StartSpan("Heartbeat")
 	defer span.Finish()
 
@@ -176,7 +176,9 @@ func (rs *restClient) Heartbeat() (resp string, err error) {
 		return "", err
 	}
 
-	return string(body), nil
+	heartbeatSuccess := string(body) == "."
+
+	return heartbeatSuccess, nil
 }
 
 // GetVaults Get a list of all available vaults
