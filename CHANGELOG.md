@@ -12,10 +12,19 @@
 
 ---
 
+[//]: # (START/v1.5.3)
+# v1.5.3
+
+## Fixes
+ * In `getItem`, if `getItemByUUID` fails, try `getItemByTitle` in case the title happens to be 26 chars long. {#84}
+ * Fixed ContentVersoin typo {#80}
+
+---
+
 [//]: # (START/v1.5.2)
 # v1.5.2
 ## Fixes
- * Downgrading atomic dependency due to compatibilty issues with Gorelaser. {81}
+ * Downgrading atomic dependency due to compatibilty issues with Gorelaser. {#81}
 
 ---
 
@@ -23,8 +32,8 @@
 # v1.5.1
 
 ## Features
-  * Added constants for item field purpose and type. {67}
-  * Improved error handling when does not contain a valid json body. {63}
+  * Added constants for item field purpose and type. {#67}
+  * Improved error handling when does not contain a valid json body. {#63}
 ---
 
 [//]: # (START/v1.5.0)
