@@ -163,24 +163,24 @@ func (rs *restClient) Heartbeat() (alive bool, respBody string, err error) {
 	heartbeatURL := fmt.Sprintf("/heartbeat")
 	request, err := rs.buildRequest(http.MethodGet, heartbeatURL, http.NoBody, span)
 	if err != nil {
-		return false,"", err
+		return false, "", err
 	}
 
 	response, err := rs.client.Do(request)
 	if err != nil {
-		return false,"", err
+		return false, "", err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return false,"", err
+		return false, "", err
 	}
 
 	heartbeatSuccess := string(body) == "."
 	if !heartbeatSuccess {
 		return false, string(body), fmt.Errorf(response.Status)
 	}
-	return heartbeatSuccess, "", nil
+	return heartbeatSuccess, string(body), nil
 }
 
 // GetVaults Get a list of all available vaults
