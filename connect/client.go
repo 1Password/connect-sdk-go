@@ -156,29 +156,31 @@ func (rs *restClient) AddHeader(key string, value string) {
 }
 
 // Get heartbeat from Connector Server
-func (rs *restClient) Heartbeat() (alive bool, err error) {
+func (rs *restClient) Heartbeat() (alive bool, respBody string, err error) {
 	span := rs.tracer.StartSpan("Heartbeat")
 	defer span.Finish()
 
 	heartbeatURL := fmt.Sprintf("/heartbeat")
 	request, err := rs.buildRequest(http.MethodGet, heartbeatURL, http.NoBody, span)
 	if err != nil {
-		return false, err
+		return false,"", err
 	}
 
 	response, err := rs.client.Do(request)
 	if err != nil {
-		return false, err
+		return false,"", err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return false, err
+		return false,"", err
 	}
 
 	heartbeatSuccess := string(body) == "."
-
-	return heartbeatSuccess, nil
+	if !heartbeatSuccess {
+		return false, string(body), fmt.Errorf(response.Status)
+	}
+	return heartbeatSuccess, string(body), nil
 }
 
 // GetVaults Get a list of all available vaults
