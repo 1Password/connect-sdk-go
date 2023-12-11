@@ -34,7 +34,7 @@ var (
 // Client Represents an available 1Password Connect API to connect to
 type Client interface {
 	AddHeader(key string, value string)
-	Heartbeat() (alive bool, err error)
+	Heartbeat() (alive bool, body string, err error)
 	GetVaults() ([]onepassword.Vault, error)
 	GetVault(uuid string) (*onepassword.Vault, error)
 	GetVaultByUUID(uuid string) (*onepassword.Vault, error)
@@ -180,7 +180,7 @@ func (rs *restClient) Heartbeat() (alive bool, respBody string, err error) {
 	if !heartbeatSuccess {
 		return false, string(body), fmt.Errorf(response.Status)
 	}
-	return heartbeatSuccess, string(body), nil
+	return heartbeatSuccess, "", nil
 }
 
 // GetVaults Get a list of all available vaults
