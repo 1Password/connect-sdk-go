@@ -178,7 +178,7 @@ func (rs *restClient) Heartbeat() (alive bool, respBody string, err error) {
 
 	heartbeatSuccess := string(body) == "."
 	if !heartbeatSuccess {
-		return false, string(body), fmt.Errorf(response.Status)
+		return false, response.Status, fmt.Errorf(fmt.Sprint(response.StatusCode), response.Status)
 	}
 	return heartbeatSuccess, string(body), nil
 }
