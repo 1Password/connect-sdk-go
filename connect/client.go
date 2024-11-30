@@ -43,6 +43,7 @@ type Client interface {
 	GetItemByUUID(uuid string, vaultQuery string) (*onepassword.Item, error)
 	GetItemByTitle(title string, vaultQuery string) (*onepassword.Item, error)
 	GetItemsByTitle(title string, vaultQuery string) ([]onepassword.Item, error)
+	GetItemsByFilter(filter string, vaultQuery string) ([]onepassword.Item, error)
 	CreateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error)
 	UpdateItem(item *onepassword.Item, vaultQuery string) (*onepassword.Item, error)
 	DeleteItem(item *onepassword.Item, vaultQuery string) error
@@ -309,6 +310,8 @@ func (rs *restClient) GetItemByTitle(title string, vaultQuery string) (*onepassw
 }
 
 func (rs *restClient) GetItemsByTitle(title string, vaultQuery string) ([]onepassword.Item, error) {
+	filter := fmt.Sprintf("title eq \"%s\"", title)
+
 	vaultUUID, err := rs.getVaultUUID(vaultQuery)
 	if err != nil {
 		return nil, err
@@ -317,7 +320,22 @@ func (rs *restClient) GetItemsByTitle(title string, vaultQuery string) ([]onepas
 	span := rs.tracer.StartSpan("GetItemsByTitle")
 	defer span.Finish()
 
-	filter := url.QueryEscape(fmt.Sprintf("title eq \"%s\"", title))
+	return rs.getItemsByFilter(filter, vaultUUID, span)
+}
+
+func (rs *restClient) GetItemsByFilter(filter string, vaultQuery string) ([]onepassword.Item, error) {
+	vaultUUID, err := rs.getVaultUUID(vaultQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	span := rs.tracer.StartSpan("GetItemsByFilter")
+	defer span.Finish()
+
+	return rs.getItemsByFilter(filter, vaultUUID, span)
+}
+
+func (rs *restClient) getItemsByFilter(filter string, vaultUUID string, span opentracing.Span) ([]onepassword.Item, error) {
 	itemURL := fmt.Sprintf("/v1/vaults/%s/items?filter=%s", vaultUUID, filter)
 	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
 	if err != nil {
