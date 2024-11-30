@@ -336,7 +336,7 @@ func (rs *restClient) GetItemsByFilter(filter string, vaultQuery string) ([]onep
 }
 
 func (rs *restClient) getItemsByFilter(filter string, vaultUUID string, span opentracing.Span) ([]onepassword.Item, error) {
-	itemURL := fmt.Sprintf("/v1/vaults/%s/items?filter=%s", vaultUUID, filter)
+	itemURL := fmt.Sprintf("/v1/vaults/%s/items?filter=%s", vaultUUID, url.QueryEscape(filter))
 	request, err := rs.buildRequest(http.MethodGet, itemURL, http.NoBody, span)
 	if err != nil {
 		return nil, err
