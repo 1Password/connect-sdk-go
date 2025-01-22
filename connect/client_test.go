@@ -354,6 +354,26 @@ func Test_restClient_GetItemsByTitle(t *testing.T) {
 	assert.Equal(t, items[0].Fields[1].Value, "appleseed")
 }
 
+func Test_restClient_GetItemsByFilter(t *testing.T) {
+	mockHTTPClient.Dofunc = listItemsOrGetItem
+	items, err := testClient.GetItemsByFilter("tag eq \"test-items\"", testVaultUUID)
+
+	if err != nil {
+		t.Logf("Unable to get item: %s", err.Error())
+		t.FailNow()
+	}
+
+	if len(items) != 1 {
+		t.Logf("Expected 1 item to exist in vault, found %d", len(items))
+		t.FailNow()
+	}
+
+	assert.Equal(t, items[0].Title, "test-item")
+	assert.NotEqual(t, len(items[0].Fields), 0)
+	assert.Equal(t, items[0].Fields[0].Value, "wendy")
+	assert.Equal(t, items[0].Fields[1].Value, "appleseed")
+}
+
 func Test_restClient_GetItemByTitle(t *testing.T) {
 	defer reset()
 
