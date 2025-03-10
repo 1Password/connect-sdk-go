@@ -177,6 +177,36 @@ func TestNewClientWithUserAgent(t *testing.T) {
 
 }
 
+type dummyClient struct {
+	testClient bool
+}
+
+func (t *dummyClient) Do(req *http.Request) (*http.Response, error) {
+	return nil, nil
+}
+
+func TestNewClientWithOpts(t *testing.T) {
+	d := &dummyClient{testClient: true}
+	client := NewClient(validHost, validToken, WithUserAgent(testUserAgent), WithClient(d))
+
+	restClient, ok := client.(*restClient)
+	if !ok {
+		t.Log("Unable to cast client to rest client. Was expecting restClient")
+		t.FailNow()
+	}
+
+	if _, ok := restClient.client.(*dummyClient); !ok {
+		t.Logf("Expected client to be of type dummyclient, got %T", restClient.client)
+		t.FailNow()
+	}
+
+	if restClient.userAgent != testUserAgent {
+		t.Logf("Expected user-agent of %q, got %q", testUserAgent, restClient.userAgent)
+		t.FailNow()
+	}
+
+}
+
 func Test_restClient_GetVaults(t *testing.T) {
 	mockHTTPClient.Dofunc = listVaults
 	vaults, err := testClient.GetVaults()

@@ -58,7 +58,7 @@ type Client interface {
 	LoadStruct(config interface{}) error
 }
 
-type httpClient interface {
+type HTTClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -66,6 +66,27 @@ const (
 	envHostVariable  = "OP_CONNECT_HOST"
 	envTokenVariable = "OP_CONNECT_TOKEN"
 )
+
+type Opts struct {
+	UserAgent string
+	Client    HTTClient
+}
+
+type ClientOptsFn func(opts *Opts)
+
+// WithUserAgent configures the userAgent for the client.
+func WithUserAgent(userAgent string) ClientOptsFn {
+	return func(opts *Opts) {
+		opts.UserAgent = userAgent
+	}
+}
+
+// WithClient configures the underlying http connection for the client.
+func WithClient(client HTTClient) ClientOptsFn {
+	return func(opts *Opts) {
+		opts.Client = client
+	}
+}
 
 // NewClientFromEnvironment Returns a Secret Service client assuming that your
 // jwt is set in the OP_TOKEN environment variable
@@ -84,17 +105,26 @@ func NewClientFromEnvironment() (Client, error) {
 }
 
 // NewClient Returns a Secret Service client for a given url and jwt
-func NewClient(url string, token string) Client {
-	return NewClientWithUserAgent(url, token, fmt.Sprintf(defaultUserAgent, SDKVersion))
+func NewClient(url string, token string, opts ...ClientOptsFn) Client {
+	return NewClientWithUserAgent(url, token, fmt.Sprintf(defaultUserAgent, SDKVersion), opts...)
 }
 
 // NewClientWithUserAgent Returns a Secret Service client for a given url and jwt and identifies with userAgent
-func NewClientWithUserAgent(url string, token string, userAgent string) Client {
+func NewClientWithUserAgent(url string, token string, userAgent string, opts ...ClientOptsFn) Client {
+	defaultOpts := &Opts{
+		UserAgent: userAgent,
+		Client:    http.DefaultClient,
+	}
+
+	for _, opt := range opts {
+		opt(defaultOpts)
+	}
+
 	if !opentracing.IsGlobalTracerRegistered() {
 		cfg := jaegerClientConfig.Configuration{}
 		zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
 		cfg.InitGlobalTracer(
-			userAgent,
+			defaultOpts.UserAgent,
 			jaegerClientConfig.Injector(opentracing.HTTPHeaders, zipkinPropagator),
 			jaegerClientConfig.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 			jaegerClientConfig.ZipkinSharedRPCSpan(true),
@@ -105,10 +135,10 @@ func NewClientWithUserAgent(url string, token string, userAgent string) Client {
 		URL:   url,
 		Token: token,
 
-		userAgent: userAgent,
+		userAgent: defaultOpts.UserAgent,
 		tracer:    opentracing.GlobalTracer(),
 
-		client: http.DefaultClient,
+		client: defaultOpts.Client,
 	}
 }
 
@@ -117,7 +147,7 @@ type restClient struct {
 	Token     string
 	userAgent string
 	tracer    opentracing.Tracer
-	client    httpClient
+	client    HTTClient
 }
 
 // GetVaults Get a list of all available vaults
