@@ -56,7 +56,7 @@ const (
 	FieldTypeString           ItemFieldType = "STRING"
 	FieldTypeURL              ItemFieldType = "URL"
 	FieldTypeFile             ItemFieldType = "FILE"
-	FieldTypeSSHKey           ItemFieldType = "SSH_KEY"
+	FieldTypeSSHKey           ItemFieldType = "SSHKEY"
 	FieldTypeUnknown          ItemFieldType = "UNKNOWN"
 )
 
