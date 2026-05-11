@@ -598,6 +598,42 @@ func Test_restClient_loadStructFromItemAndOneItem(t *testing.T) {
 	assert.Equal(t, generateComplexItem(testVaultUUID), c.Item)
 }
 
+// Test_restClient_loadStructFromItem_caseInsensitiveTags verifies that
+// section, field, and url tag values resolve case-insensitively against the
+// labels stored in 1Password. Item labels in 1Password may be mixed-case,
+// but a struct tag should still resolve them regardless of casing.
+func Test_restClient_loadStructFromItem_caseInsensitiveTags(t *testing.T) {
+	type testConfig struct {
+		Username string                  `opfield:"USERNAME"`                     // field label is "username" lowercase
+		Password string                  `opsection:"SECTION" opfield:"PASSWORD"` // section/field labels are lowercase
+		Section  onepassword.ItemSection `opsection:"SECTION"`                    // section label is lowercase
+		URL      onepassword.ItemURL     `opurl:"URL"`                            // url label is lowercase
+	}
+	mockHTTPClient.Dofunc = getComplexItem
+
+	item := parsedItem{
+		vaultUUID: testID,
+		itemUUID:  testID,
+	}
+	c := testConfig{}
+
+	err := loadToStruct(&item, reflect.ValueOf(&c).Elem())
+	assert.Nil(t, err)
+	err = setValuesForTag(testClient, &item, false)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "wendy", c.Username)
+	assert.Equal(t, "appleseed", c.Password)
+	assert.Equal(t, onepassword.ItemSection{
+		ID:    "",
+		Label: "section",
+	}, c.Section)
+	assert.Equal(t, onepassword.ItemURL{
+		Label: "url",
+		URL:   "https://www.appleseed.com",
+	}, c.URL)
+}
+
 func respondError(apiErr *onepassword.Error) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		body, err := json.Marshal(apiErr)

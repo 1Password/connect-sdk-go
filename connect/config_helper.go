@@ -108,7 +108,7 @@ func setValuesForTag(client Client, parsedItem *parsedItem, byTitle bool) error 
 				fieldSectionID = f.Section.ID
 			}
 
-			if fieldSectionID == sectionID && f.Label == field.Tag.Get(fieldTag) {
+			if fieldSectionID == sectionID && strings.EqualFold(f.Label, field.Tag.Get(fieldTag)) {
 				if err := setValue(value, f.Value); err != nil {
 					return err
 				}
@@ -143,7 +143,7 @@ func sectionIDForName(name string, sections []*onepassword.ItemSection) string {
 	}
 
 	for _, s := range sections {
-		if name == strings.ToLower(s.Label) {
+		if strings.EqualFold(name, s.Label) {
 			return s.ID
 		}
 	}
@@ -157,7 +157,7 @@ func sectionLabelForName(name string, sections []*onepassword.ItemSection) strin
 	}
 
 	for _, s := range sections {
-		if name == strings.ToLower(s.Label) {
+		if strings.EqualFold(name, s.Label) {
 			return s.Label
 		}
 	}
@@ -171,7 +171,7 @@ func urlPrimaryForName(name string, itemURLs []onepassword.ItemURL) bool {
 	}
 
 	for _, url := range itemURLs {
-		if url.Label == strings.ToLower(name) {
+		if strings.EqualFold(name, url.Label) {
 			return url.Primary
 		}
 	}
@@ -185,7 +185,7 @@ func urlLabelForName(name string, itemURLs []onepassword.ItemURL) string {
 	}
 
 	for _, url := range itemURLs {
-		if url.Label == strings.ToLower(name) {
+		if strings.EqualFold(name, url.Label) {
 			return url.Label
 		}
 	}
@@ -199,7 +199,7 @@ func urlURLForName(name string, itemURLs []onepassword.ItemURL) string {
 	}
 
 	for _, url := range itemURLs {
-		if url.Label == strings.ToLower(name) {
+		if strings.EqualFold(name, url.Label) {
 			return url.URL
 		}
 	}
