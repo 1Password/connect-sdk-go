@@ -13,6 +13,8 @@
 
 The 1Password Connect Go SDK provides access to the [1Password Connect](https://developer.1password.com/docs/connect) API, to facilitate communication with the Connect server hosted on your infrastructure and 1Password. The library is intended to be used by your applications, pipelines, and other automations to simplify accessing items stored in your 1Password vaults.
 
+*This project is licensed under [MIT](./LICENSE). Use of the 1Password APIs and services accessed through these tools is governed by the [1Password API Terms of Service](https://1password.com/legal/api-sdk-terms-of-service).*
+
 ## ✨ Quickstart
 
 1. Download and install the 1Password Connect Go SDK:
